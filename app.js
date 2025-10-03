@@ -1,5 +1,5 @@
+// --- 기존 상단 변수 ---
 const API = "https://backend-6i2t.onrender.com/predict";
-
 const $dropArea = document.getElementById("drop-area");
 const $file = document.getElementById("file");
 const $preview = document.getElementById("preview");
@@ -8,65 +8,45 @@ const $result = document.getElementById("result");
 const $loader = document.getElementById("loading");
 const $scanLine = document.querySelector(".scan-line");
 
-// 드래그 앤 드롭
-["dragenter", "dragover"].forEach(eventName => {
-  $dropArea.addEventListener(eventName, e => {
-    e.preventDefault();
-    e.stopPropagation();
-    $dropArea.classList.add("highlight");
-  }, false);
-});
+// --- 새로 추가: 카메라 관련 변수 ---
+const $camera = document.getElementById("camera");
+const $captureBtn = document.getElementById("captureBtn");
+const $snapshot = document.getElementById("snapshot");
 
-["dragleave", "drop"].forEach(eventName => {
-  $dropArea.addEventListener(eventName, e => {
-    e.preventDefault();
-    e.stopPropagation();
-    $dropArea.classList.remove("highlight");
-  }, false);
-});
-
-$dropArea.addEventListener("drop", e => {
-  const files = e.dataTransfer.files;
-  if (files.length > 0) {
-    $file.files = files;
-    showPreview(files[0]);
+// 카메라 켜기
+async function startCamera() {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+    $camera.srcObject = stream;
+    $camera.style.display = "block";
+  } catch (e) {
+    alert("카메라를 사용할 수 없습니다: " + e.message);
   }
-});
-
-// 파일 선택 시 미리보기 # 메모리 적게 차지
-$file.addEventListener("change", () => {
-  if ($file.files.length > 0) {
-    showPreview($file.files[0]);
-  }
-});
-
-function showPreview(file) {
-  const reader = new FileReader();
-  reader.onload = e => {
-    $preview.onload = () => {
-      // 이미지 로드된 후 scan-line 크기 맞춤
-      const scanLine = document.getElementById("scan-line");
-      scanLine.style.width = $preview.clientWidth + "px";
-    };
-    $preview.src = e.target.result;
-  };
-  reader.readAsDataURL(file);
 }
 
-//서버 업로드 & 예측
-$btn.addEventListener("click", async () => {
-  const f = $file.files[0];
-  if (!f) {
-    alert("이미지를 선택하세요!");
-    return;
-  }
+// 사진 찍기
+$captureBtn.addEventListener("click", () => {
+  const ctx = $snapshot.getContext("2d");
+  $snapshot.width = $camera.videoWidth;
+  $snapshot.height = $camera.videoHeight;
+  ctx.drawImage($camera, 0, 0, $snapshot.width, $snapshot.height);
 
+  // 캡처 이미지를 preview에 표시
+  $preview.src = $snapshot.toDataURL("image/png");
+  
+  // 카메라로 찍은 이미지도 predictFile로 예측
+  $snapshot.toBlob(blob => {
+    predictFile(blob);
+  }, "image/png");
+});
+
+// --- 기존 predict 함수 그대로 쓰되 공통으로 사용 가능하게 분리 ---
+async function predictFile(file) {
   const fd = new FormData();
-  fd.append("file", f);
+  fd.append("file", file);
 
-  // 로딩 시작
   $loader.style.display = "inline-block";
-  $scanLine.style.display = "block"; //스캔 시작
+  $scanLine.style.display = "block";
   $result.textContent = "";
 
   try {
@@ -74,7 +54,6 @@ $btn.addEventListener("click", async () => {
     const json = await res.json();
     if (!res.ok) throw new Error(json.error || "요청 실패");
 
-    // 백엔드 predictions 배열 구조에 맞춰 출력
     if (json.predictions && json.predictions.length > 0) {
       let text = "Top Predictions:\n";
       json.predictions.forEach((p, idx) => {
@@ -89,11 +68,20 @@ $btn.addEventListener("click", async () => {
   } catch (e) {
     $result.textContent = "에러: " + e.message;
   } finally {
-    // 요청 끝나면 로딩 숨김
     $loader.style.display = "none";
-    $scanLine.style.display = "none"; //스캔 종료
+    $scanLine.style.display = "none";
   }
+}
+
+// --- 기존 업로드 버튼 클릭 이벤트는 predictFile 호출하도록 수정 ---
+$btn.addEventListener("click", () => {
+  const f = $file.files[0];
+  if (!f) {
+    alert("이미지를 선택하세요!");
+    return;
+  }
+  predictFile(f);
 });
 
-
-
+// --- 페이지 로드 시 카메라 시작 ---
+startCamera();
