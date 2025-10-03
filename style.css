@@ -138,10 +138,8 @@
 }
 
 .preview-wrapper {
-  position: relative; /* 기존과 동일 */
-  display: block;     /* inline-block → block, 왕복이 보이게 */
-  width: 100%;
-  height: 150px;      /* 미리보기 이미지 최대 높이와 맞춤 */
+  position: relative; /* scan-line 덮을 수 있게 */
+  display: inline-block;
 }
 
 #preview {
@@ -159,18 +157,95 @@
   position: absolute;
   left: 0;
   top: 0;
-  width: 100%;
+  width: 100%;      /* 업로드된 이미지 width에 맞춤 */
   height: 4px;
   background: rgba(50, 200, 50, 0.7);
   box-shadow: 0 0 8px rgba(50, 200, 50, 0.8);
-  animation: scan 2s linear infinite alternate;
+  animation: scan 2s linear infinite;
   display: none;
 }
 
 @keyframes scan {
-  0%   { top: 0px; }
-  100% { top: 146px; } /* 부모 높이(150px) - 라인 높이(4px) */
+  0% { top: 0%; }
+  100% { top: 100%; }
 }
+
+/* From Uiverse.io by kat_2522 
+.loader {
+  display: none;
+  max-width: fit-content;
+  color: rgb(242, 255, 240);
+  font-size: 50px;
+  font-family: Mine;
+  position: relative;
+  font-style: italic;
+  font-weight: 600;
+}
+.loader span {
+  animation: cut 2s infinite;
+  transition: 1s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+.loader:hover {
+  color: #fcffdf;
+}
+.loader::after {
+  position: absolute;
+  content: "";
+  width: 100%;
+  height: 6px;
+  border-radius: 4px;
+  background-color: #ff828291;
+  top: 0px;
+  filter: blur(10px);
+  animation: scan 2s infinite;
+  left: 0;
+  z-index: 0;
+  transition: 1s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.loader::before {
+  position: absolute;
+  content: "";
+  width: 100%;
+  height: 5px;
+  border-radius: 4px;
+  background-color: #ff8282;
+  top: 0px;
+  animation: scan 2s infinite;
+  left: 0;
+  z-index: 1;
+  filter: opacity(0.9);
+  transition: 1s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+@keyframes scan {
+  0% {
+    top: 0px;
+  }
+  25% {
+    top: 54px;
+  }
+  50% {
+    top: 0px;
+  }
+  75% {
+    top: 54px;
+  }
+}
+@keyframes cut {
+  0% {
+    clip-path: inset(0 0 0 0);
+  }
+  25% {
+    clip-path: inset(100% 0 0 0);
+  }
+  50% {
+    clip-path: inset(0 0 100% 0);
+  }
+  75% {
+    clip-path: inset(0 0 0 0);
+  }
+}
+*/
 
 /* From Uiverse.io by kat_2522 
 .loader {
