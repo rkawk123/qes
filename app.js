@@ -122,13 +122,15 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!stream) {
       // 카메라 접근
       try {
-        stream = await navigator.mediaDevices.getUserMedia({ video: true });
-        video.srcObject = stream;
-        video.style.display = "block";
-        cameraBtn.textContent = "사진 찍기";
+      stream = await navigator.mediaDevices.getUserMedia({ 
+      video: { facingMode: "environment" } // 후면 카메라 사용
+       });
+      video.srcObject = stream;
+      video.style.display = "block";
+      cameraBtn.textContent = "사진 찍기";
       } catch (err) {
-        alert("카메라 접근 실패: " + err.message);
-        return;
+      alert("카메라 접근 실패: " + err.message);
+      return;
       }
     } else {
       // 캡처
