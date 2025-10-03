@@ -161,7 +161,7 @@
   height: 4px;
   background: rgba(50, 200, 50, 0.7);
   box-shadow: 0 0 8px rgba(50, 200, 50, 0.8);
-  animation: scan 2s linear infinite;
+  animation: scan 2s linear infinite alternate;
   display: none;
 }
 
