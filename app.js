@@ -60,7 +60,14 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     const fd = new FormData();
-    fd.append("file", file, "image.png");
+
+    // file이 Blob이면 File로 변환
+    let uploadFile = file;
+    if (!(file instanceof File)) {
+      uploadFile = new File([file], "image.png", { type: "image/png" });
+    }
+
+    fd.append("file", uploadFile);
 
     $loader.style.display = "inline-block";
     $scanLine.style.display = "block";
@@ -90,10 +97,13 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  $btn.addEventListener("click", () => {
-    const f = $file.files[0];
-    sendToServer(f);
-  });
+  // 예측 버튼 클릭
+  if ($btn) {
+    $btn.addEventListener("click", () => {
+      const f = $file.files[0];
+      sendToServer(f);
+    });
+  }
 
   // ===== 카메라 기능 =====
   const cameraBtn = document.createElement("button");
@@ -109,16 +119,18 @@ document.addEventListener("DOMContentLoaded", () => {
   let stream;
 
   cameraBtn.addEventListener("click", async () => {
-    try {
-      stream = await navigator.mediaDevices.getUserMedia({ video: true });
-      video.srcObject = stream;
-      video.style.display = "block";
-      cameraBtn.textContent = "사진 찍기";
-    } catch (err) {
-      alert("카메라 접근 실패: " + err.message);
-    }
-
-    cameraBtn.onclick = () => {
+    if (!stream) {
+      // 카메라 접근
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        video.srcObject = stream;
+        video.style.display = "block";
+        cameraBtn.textContent = "사진 찍기";
+      } catch (err) {
+        alert("카메라 접근 실패: " + err.message);
+        return;
+      }
+    } else {
       // 캡처
       const canvas = document.createElement("canvas");
       canvas.width = video.videoWidth;
@@ -126,20 +138,15 @@ document.addEventListener("DOMContentLoaded", () => {
       canvas.getContext("2d").drawImage(video, 0, 0);
 
       canvas.toBlob(blob => {
-        // preview에 표시
         showPreview(blob);
-        // 서버 전송
         sendToServer(blob);
       }, "image/png");
 
       // 비디오 종료
-      if (stream) {
-        stream.getTracks().forEach(track => track.stop());
-      }
+      stream.getTracks().forEach(track => track.stop());
+      stream = null;
       video.style.display = "none";
       cameraBtn.textContent = "📷 카메라 촬영";
-      cameraBtn.onclick = null; // 다시 클릭 시 새로 getUserMedia
-    };
+    }
   });
 });
-
