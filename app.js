@@ -8,7 +8,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const $loader = document.getElementById("loading");
   const $scanLine = document.querySelector(".scan-line");
 
-  // ===== 드래그 앤 드롭 =====
+  // ===== 드래그 앤 드롭 / 파일 업로드 =====
   ["dragenter", "dragover"].forEach(eventName => {
     $dropArea.addEventListener(eventName, e => {
       e.preventDefault();
@@ -33,11 +33,8 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  // ===== 파일 선택 시 미리보기 =====
   $file.addEventListener("change", () => {
-    if ($file.files.length > 0) {
-      showPreview($file.files[0]);
-    }
+    if ($file.files.length > 0) showPreview($file.files[0]);
   });
 
   function showPreview(file) {
@@ -51,13 +48,11 @@ document.addEventListener("DOMContentLoaded", () => {
     reader.readAsDataURL(file);
   }
 
-  // ===== 서버 업로드 & 예측 =====
   async function sendToServer(file) {
     if (!file) {
       alert("이미지를 선택하세요!");
       return;
     }
-
     const fd = new FormData();
     fd.append("file", file, "image.png");
 
@@ -89,7 +84,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // ===== 업로드 버튼 =====
+  // ===== 업로드 예측 버튼 =====
   const $btn = document.createElement("button");
   $btn.textContent = "▶ 예측하기";
   $btn.className = "predict-btn";
@@ -100,61 +95,74 @@ document.addEventListener("DOMContentLoaded", () => {
     sendToServer(f);
   });
 
-  // ===== 카메라 기능 =====
-  const cameraBtn = document.createElement("button");
-  cameraBtn.textContent = "📷 카메라 촬영";
-  cameraBtn.className = "upload-btn";
-  $dropArea.appendChild(cameraBtn);
-
+  // ===== 카메라 기능 (화면 터치 초점 + 하단 원 버튼) =====
   const video = document.createElement("video");
   video.autoplay = true;
   video.playsInline = true;
-  video.style.display = "none";
+  video.style.display = "block";
+  video.style.width = "100%";
+  video.style.borderRadius = "6px";
   $dropArea.appendChild(video);
 
+  const focusCircle = document.createElement("div");
+  focusCircle.style.position = "absolute";
+  focusCircle.style.width = "60px";
+  focusCircle.style.height = "60px";
+  focusCircle.style.border = "2px solid white";
+  focusCircle.style.borderRadius = "50%";
+  focusCircle.style.pointerEvents = "none";
+  focusCircle.style.display = "none";
+  $dropArea.appendChild(focusCircle);
+
+  const captureBtn = document.createElement("div");
+  captureBtn.style.position = "absolute";
+  captureBtn.style.bottom = "15px";
+  captureBtn.style.left = "50%";
+  captureBtn.style.transform = "translateX(-50%)";
+  captureBtn.style.width = "60px";
+  captureBtn.style.height = "60px";
+  captureBtn.style.border = "3px solid white";
+  captureBtn.style.borderRadius = "50%";
+  captureBtn.style.background = "rgba(255,255,255,0.2)";
+  captureBtn.style.cursor = "pointer";
+  $dropArea.appendChild(captureBtn);
+
   let stream;
-
-  cameraBtn.addEventListener("click", async () => {
-    if (!stream) {
-      // 후면 카메라 접근
-      try {
-        stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: { exact: "environment" } }
-        });
-        video.srcObject = stream;
-        video.style.display = "block";
-        cameraBtn.textContent = "사진 찍기";
-      } catch (err) {
-        alert("후면 카메라 접근 실패, 기본 카메라로 시도합니다: " + err.message);
-        try {
-          stream = await navigator.mediaDevices.getUserMedia({ video: true });
-          video.srcObject = stream;
-          video.style.display = "block";
-          cameraBtn.textContent = "사진 찍기";
-        } catch (err2) {
-          alert("카메라 접근 실패: " + err2.message);
-          return;
-        }
-      }
-    } else {
-      // 캡처
-      const canvas = document.createElement("canvas");
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-      canvas.getContext("2d").drawImage(video, 0, 0);
-
-      canvas.toBlob(blob => {
-        showPreview(blob);
-        sendToServer(blob);
-      }, "image/png");
-
-      // 비디오 종료
-      if (stream) {
-        stream.getTracks().forEach(track => track.stop());
-        stream = null;
-      }
-      video.style.display = "none";
-      cameraBtn.textContent = "📷 카메라 촬영";
+  async function startCamera() {
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { exact: "environment" } }
+      });
+      video.srcObject = stream;
+    } catch (err) {
+      console.warn("후면 카메라 실패, 기본 카메라 시도:", err.message);
+      stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      video.srcObject = stream;
     }
+  }
+  startCamera();
+
+  // 터치 시 초점 표시
+  video.addEventListener("click", e => {
+    const rect = video.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    focusCircle.style.left = `${x - 30}px`;
+    focusCircle.style.top = `${y - 30}px`;
+    focusCircle.style.display = "block";
+    setTimeout(() => (focusCircle.style.display = "none"), 800);
+  });
+
+  // 캡처 버튼 클릭
+  captureBtn.addEventListener("click", () => {
+    if (!stream) return;
+    const canvas = document.createElement("canvas");
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    canvas.getContext("2d").drawImage(video, 0, 0);
+    canvas.toBlob(blob => {
+      showPreview(blob);
+      sendToServer(blob);
+    }, "image/png");
   });
 });
