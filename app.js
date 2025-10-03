@@ -33,7 +33,7 @@ $dropArea.addEventListener("drop", e => {
   }
 });
 
-// 파일 선택 시 미리보기 # 메모리 적게 차지
+// 파일 선택 시 미리보기
 $file.addEventListener("change", () => {
   if ($file.files.length > 0) {
     showPreview($file.files[0]);
@@ -44,7 +44,6 @@ function showPreview(file) {
   const reader = new FileReader();
   reader.onload = e => {
     $preview.onload = () => {
-      // 이미지 로드된 후 scan-line 크기 맞춤
       const scanLine = document.getElementById("scan-line");
       scanLine.style.width = $preview.clientWidth + "px";
     };
@@ -53,20 +52,23 @@ function showPreview(file) {
   reader.readAsDataURL(file);
 }
 
-//서버 업로드 & 예측
+// 서버 업로드 & 예측
 $btn.addEventListener("click", async () => {
   const f = $file.files[0];
   if (!f) {
     alert("이미지를 선택하세요!");
     return;
   }
+  predictImage(f);
+});
 
+// 서버 예측 함수
+async function predictImage(fileBlob) {
   const fd = new FormData();
-  fd.append("file", f);
+  fd.append("file", fileBlob);
 
-  // 로딩 시작
   $loader.style.display = "inline-block";
-  $scanLine.style.display = "block"; //스캔 시작
+  $scanLine.style.display = "block";
   $result.textContent = "";
 
   try {
@@ -74,7 +76,6 @@ $btn.addEventListener("click", async () => {
     const json = await res.json();
     if (!res.ok) throw new Error(json.error || "요청 실패");
 
-    // 백엔드 predictions 배열 구조에 맞춰 출력
     if (json.predictions && json.predictions.length > 0) {
       let text = "Top Predictions:\n";
       json.predictions.forEach((p, idx) => {
@@ -89,11 +90,60 @@ $btn.addEventListener("click", async () => {
   } catch (e) {
     $result.textContent = "에러: " + e.message;
   } finally {
-    // 요청 끝나면 로딩 숨김
     $loader.style.display = "none";
-    $scanLine.style.display = "none"; //스캔 종료
+    $scanLine.style.display = "none";
+  }
+}
+
+// 카메라 촬영 버튼
+const $cameraBtn = document.getElementById("camera-btn");
+
+$cameraBtn.addEventListener("click", async () => {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: { exact: "environment" } },
+      audio: false
+    });
+
+    const video = document.createElement("video");
+    video.srcObject = stream;
+    video.autoplay = true;
+    video.width = 300;
+    video.height = 200;
+
+    const previewWrapper = document.querySelector(".preview-wrapper");
+    previewWrapper.innerHTML = "";
+    previewWrapper.appendChild(video);
+
+    const captureBtn = document.createElement("div");
+    captureBtn.className = "capture-circle";
+    previewWrapper.appendChild(captureBtn);
+
+    captureBtn.addEventListener("click", async () => {
+      const canvas = document.createElement("canvas");
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      canvas.getContext("2d").drawImage(video, 0, 0);
+
+      const blob = await new Promise(resolve => canvas.toBlob(resolve, "image/png"));
+
+      // 스트림 종료
+      stream.getTracks().forEach(track => track.stop());
+
+      // 미리보기 + 스캔라인 복원
+      $preview.src = URL.createObjectURL(blob);
+      previewWrapper.innerHTML = "";
+      previewWrapper.appendChild($preview);
+      const scanLine = document.createElement("div");
+      scanLine.className = "scan-line";
+      scanLine.id = "scan-line";
+      previewWrapper.appendChild(scanLine);
+
+      // 바로 예측
+      predictImage(blob);
+    });
+
+  } catch (err) {
+    alert("후면 카메라를 사용할 수 없습니다: " + err.message);
   }
 });
-
-
-
