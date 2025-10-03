@@ -6,41 +6,41 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div class="wrapper">
-    <div class="container">
+  <h1>이미지 분류기</h1>
 
-      <h1>이미지 분류기</h1>
+  <div class="container">
 
-      <!-- 업로드 영역 -->
-      <div class="header" id="drop-area">
-        <input type="file" id="file" accept="image/*">
-        <label for="file" class="upload-btn">이미지 업로드</label>
-        <p>이미지를 업로드하거나 아래 카메라 영역을 터치하세요</p>
-      </div>
-
-      <!-- 카메라 영역 -->
-      <div class="camera-wrapper">
-        <video id="camera" autoplay playsinline></video>
-        <div id="captureBtn" class="capture-circle"></div>
-      </div>
-
-      <!-- 미리보기 -->
-      <div class="preview-wrapper">
-        <img id="preview" />
-        <div class="scan-line" id="scan-line"></div>
-      </div>
-
-      <!-- 결과 -->
-      <pre id="result"></pre>
-
-      <!-- 로딩 -->
-      <div class="footer">
-        <span id="loading">예측 중 <span class="loader"></span></span>
-      </div>
-
+    <!-- 업로드 영역 -->
+    <div class="header" id="drop-area">
+      <input type="file" id="file" accept="image/*">
+      <label for="file" class="upload-btn">이미지 업로드</label>
+      <p>이미지를 업로드하거나 카메라로 사진을 찍을 수 있습니다.</p>
     </div>
+
+    <!-- 카메라 영역 -->
+    <div class="camera-wrapper" style="position:relative; display:none;">
+      <video id="camera" autoplay playsinline></video>
+      <button id="captureBtn" class="capture-btn"></button>
+    </div>
+
+    <!-- 미리보기 -->
+    <div class="preview-wrapper">
+      <img id="preview" />
+      <div class="scan-line" id="scan-line"></div>
+    </div>
+
+    <!-- 결과 -->
+    <pre id="result"></pre>
+
+    <!-- 로딩 -->
+    <div class="footer">
+      <button id="btn" class="predict-btn">카메라로 사진 찍기</button>
+      <span id="loading">예측 중 <span class="loader"></span></span>
+    </div>
+
   </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
   <script src="app.js"></script>
 </body>
 </html>
