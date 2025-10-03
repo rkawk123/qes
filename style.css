@@ -138,8 +138,10 @@
 }
 
 .preview-wrapper {
-  position: relative; /* scan-line 덮을 수 있게 */
-  display: inline-block;
+  position: relative; /* 기존과 동일 */
+  display: block;     /* inline-block → block, 왕복이 보이게 */
+  width: 100%;
+  height: 150px;      /* 미리보기 이미지 최대 높이와 맞춤 */
 }
 
 #preview {
@@ -157,7 +159,7 @@
   position: absolute;
   left: 0;
   top: 0;
-  width: 100%;      /* 업로드된 이미지 width에 맞춤 */
+  width: 100%;
   height: 4px;
   background: rgba(50, 200, 50, 0.7);
   box-shadow: 0 0 8px rgba(50, 200, 50, 0.8);
@@ -166,8 +168,8 @@
 }
 
 @keyframes scan {
-  0% { top: 0%; }
-  100% { top: 100%; }
+  0%   { top: 0px; }
+  100% { top: 146px; } /* 부모 높이(150px) - 라인 높이(4px) */
 }
 
 /* From Uiverse.io by kat_2522 
