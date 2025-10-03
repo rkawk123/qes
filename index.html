@@ -14,14 +14,15 @@
     <div class="header" id="drop-area">
       <input type="file" id="file" accept="image/*">
       <label for="file" class="upload-btn">이미지 업로드</label>
-      <p>이미지를 업로드하거나 카메라로 사진을 찍을 수 있습니다.</p>
+      <p>이미지를 업로드하거나 아래 버튼으로 사진 찍기</p>
     </div>
 
     <!-- 카메라 영역 -->
-    <div class="camera-wrapper" style="position:relative; display:none;">
-      <video id="camera" autoplay playsinline></video>
-      <button id="captureBtn" class="capture-btn"></button>
-    </div>
+    <video id="camera" autoplay playsinline style="display:none;"></video>
+    <button id="captureBtn">카메라로 사진 찍기</button>
+
+    <!-- 캔버스: 사진 저장용 -->
+    <canvas id="snapshot" style="display:none;"></canvas>
 
     <!-- 미리보기 -->
     <div class="preview-wrapper">
@@ -34,7 +35,6 @@
 
     <!-- 로딩 -->
     <div class="footer">
-      <button id="btn" class="predict-btn">카메라로 사진 찍기</button>
       <span id="loading">예측 중 <span class="loader"></span></span>
     </div>
 
@@ -44,6 +44,3 @@
   <script src="app.js"></script>
 </body>
 </html>
-
-
-
