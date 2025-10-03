@@ -1,28 +1,21 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8">
-  <title>카메라 & 업로드 분류기</title>
+  <meta charset="UTF-8" />
+  <title>이미지 분류기 (DenseNet)</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <h1>이미지 분류기</h1>
 
+  <!-- 메인 박스 -->
   <div class="container">
-
     <!-- 업로드 영역 -->
     <div class="header" id="drop-area">
-      <input type="file" id="file" accept="image/*">
+      <input type="file" id="file" accept="image/*" />
       <label for="file" class="upload-btn">이미지 업로드</label>
-      <p>이미지를 업로드하거나 아래 버튼으로 사진 찍기</p>
+      <p>여기에 이미지를 드래그하거나 버튼을 클릭하세요</p>
     </div>
-
-    <!-- 카메라 영역 -->
-    <video id="camera" autoplay playsinline style="display:none;"></video>
-    <button id="captureBtn">카메라로 사진 찍기</button>
-
-    <!-- 캔버스: 사진 저장용 -->
-    <canvas id="snapshot" style="display:none;"></canvas>
 
     <!-- 미리보기 -->
     <div class="preview-wrapper">
@@ -30,17 +23,20 @@
       <div class="scan-line" id="scan-line"></div>
     </div>
 
+
     <!-- 결과 -->
     <pre id="result"></pre>
 
-    <!-- 로딩 -->
+    <!-- 로딩 표시 -->
     <div class="footer">
-      <span id="loading">예측 중 <span class="loader"></span></span>
+      <button id="btn" class="predict-btn">▶ 예측하기</button>
+      <span id="loading">
+        예측 중
+        <span class="loader"></span>
+      </span>
     </div>
 
-  </div>
-
-  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
-  <script src="app.js"></script>
+    <script src="app.js"></script>
 </body>
 </html>
+
