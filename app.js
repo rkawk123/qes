@@ -4,16 +4,9 @@ document.addEventListener("DOMContentLoaded", () => {
   const $dropArea = document.getElementById("drop-area");
   const $file = document.getElementById("file");
   const $preview = document.getElementById("preview");
-  const $btn = document.getElementById("btn");
   const $result = document.getElementById("result");
   const $loader = document.getElementById("loading");
-  const $scanLine = document.getElementById("scan-line");
-
-  const cameraWrapper = document.querySelector(".camera-wrapper");
-  const video = document.getElementById("camera");
-  const captureBtn = document.getElementById("captureBtn");
-
-  let stream;
+  const $scanLine = document.querySelector(".scan-line");
 
   // ===== 드래그 앤 드롭 =====
   ["dragenter", "dragover"].forEach(eventName => {
@@ -96,40 +89,72 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  $btn.addEventListener("click", async () => {
+  // ===== 업로드 버튼 =====
+  const $btn = document.createElement("button");
+  $btn.textContent = "▶ 예측하기";
+  $btn.className = "predict-btn";
+  $dropArea.parentElement.querySelector(".footer").prepend($btn);
+
+  $btn.addEventListener("click", () => {
+    const f = $file.files[0];
+    sendToServer(f);
+  });
+
+  // ===== 카메라 기능 =====
+  const cameraBtn = document.createElement("button");
+  cameraBtn.textContent = "📷 카메라 촬영";
+  cameraBtn.className = "upload-btn";
+  $dropArea.appendChild(cameraBtn);
+
+  const video = document.createElement("video");
+  video.autoplay = true;
+  video.playsInline = true;
+  video.style.display = "none";
+  $dropArea.appendChild(video);
+
+  let stream;
+
+  cameraBtn.addEventListener("click", async () => {
     if (!stream) {
+      // 후면 카메라 접근
       try {
         stream = await navigator.mediaDevices.getUserMedia({
           video: { facingMode: { exact: "environment" } }
         });
         video.srcObject = stream;
-        cameraWrapper.style.display = "block";
-        $btn.style.display = "none"; // 버튼 숨김
+        video.style.display = "block";
+        cameraBtn.textContent = "사진 찍기";
       } catch (err) {
-        alert("카메라 접근 실패: " + err.message);
-        return;
+        alert("후면 카메라 접근 실패, 기본 카메라로 시도합니다: " + err.message);
+        try {
+          stream = await navigator.mediaDevices.getUserMedia({ video: true });
+          video.srcObject = stream;
+          video.style.display = "block";
+          cameraBtn.textContent = "사진 찍기";
+        } catch (err2) {
+          alert("카메라 접근 실패: " + err2.message);
+          return;
+        }
       }
+    } else {
+      // 캡처
+      const canvas = document.createElement("canvas");
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      canvas.getContext("2d").drawImage(video, 0, 0);
+
+      canvas.toBlob(blob => {
+        showPreview(blob);
+        sendToServer(blob);
+      }, "image/png");
+
+      // 비디오 종료
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+        stream = null;
+      }
+      video.style.display = "none";
+      cameraBtn.textContent = "📷 카메라 촬영";
     }
-  });
-
-  // ===== 촬영 버튼 =====
-  captureBtn.addEventListener("click", () => {
-    const canvas = document.createElement("canvas");
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    canvas.getContext("2d").drawImage(video, 0, 0, canvas.width, canvas.height);
-
-    canvas.toBlob(blob => {
-      showPreview(blob);
-      sendToServer(blob);
-    }, "image/png");
-
-    // 비디오 종료
-    if (stream) {
-      stream.getTracks().forEach(track => track.stop());
-    }
-    cameraWrapper.style.display = "none";
-    $btn.style.display = "inline-block";
-    stream = null;
   });
 });
