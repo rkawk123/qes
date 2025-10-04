@@ -198,3 +198,7 @@ body {
   min-height: 100vh;       /* 화면 전체 높이 사용 */
   margin: 0;               /* 여백 제거 */
 }
+h1 {
+  text-align: center;
+  width: 100%;
+}
