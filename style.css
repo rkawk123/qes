@@ -1,3 +1,30 @@
+/* 전체 body 중앙 가로정렬 */
+body {
+  display: flex;
+  justify-content: center; /* 가로 가운데 */
+  align-items: flex-start; /* 세로 상단 기준 */
+  min-height: 100vh;
+  margin: 0;
+  padding-top: 50px; /* 화면 상단과 제목 사이 여백 */
+  background-color: #f0f4ff; /* 선택 사항: 배경색 */
+}
+
+/* 래퍼: 제목 + 박스 묶음 */
+.wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center; /* 가로 중앙 */
+  gap: 10px;
+}
+
+/* 제목 */
+h1 {
+  text-align: center;
+  width: 320px; /* .container와 동일 너비 */
+  margin: 0;
+  font-size: 24px;
+}
+
 /* 컨테이너 박스 */
 .container {
   height: 400px;
@@ -191,18 +218,3 @@
   cursor: pointer;
   box-shadow: 0 0 10px rgba(0,0,0,0.3);
 }
-body {
-  display: flex;
-  justify-content: center; /* 가로 가운데 */
-  align-items: center;     /* 세로 가운데 */
-  min-height: 100vh;       /* 화면 전체 높이 사용 */
-  margin: 0;               /* 여백 제거 */
-}
-h1 {
-  text-align: center;      /* 글자 가운데 정렬 */
-  width: 320px;            /* .container와 동일한 너비 */
-  margin: 0 auto 10px;     /* 상단 0, 하단 10px 여백, 좌우 자동 중앙 */
-  font-size: 24px;         /* 필요하면 글자 크기 조정 */
-}
-
-
