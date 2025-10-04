@@ -252,15 +252,4 @@ h1 {
     padding: 6px 12px;
     font-size: 14px;
   }
-  /* 모바일 전체 화면 카메라 */
-.fullscreen-video {
-  position: fixed;     /* 화면에 고정 */
-  top: 0;
-  left: 0;
-  width: 100vw;        /* 화면 가로 꽉 채움 */
-  height: 100vh;       /* 화면 세로 꽉 채움 */
-  object-fit: cover;   /* 화면 비율 유지하며 채움 */
-  z-index: 9999;       /* 다른 요소 위로 */
-  background: black;   /* 영상 로딩시 검은 배경 */
-}
 }
