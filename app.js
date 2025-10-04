@@ -109,7 +109,7 @@ $cameraBtn.addEventListener("click", async () => {
     video.srcObject = stream;
     video.autoplay = true;
     video.width = 300;
-    video.height = 200;
+    video.height = 400;
 
     const previewWrapper = document.querySelector(".preview-wrapper");
     previewWrapper.innerHTML = "";
