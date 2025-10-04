@@ -199,6 +199,10 @@ body {
   margin: 0;               /* 여백 제거 */
 }
 h1 {
-  text-align: center;
-  width: 100%;
+  text-align: center;      /* 글자 가운데 정렬 */
+  width: 320px;            /* .container와 동일한 너비 */
+  margin: 0 auto 10px;     /* 상단 0, 하단 10px 여백, 좌우 자동 중앙 */
+  font-size: 24px;         /* 필요하면 글자 크기 조정 */
 }
+
+
