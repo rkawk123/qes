@@ -108,8 +108,14 @@ $cameraBtn.addEventListener("click", async () => {
     const video = document.createElement("video");
     video.srcObject = stream;
     video.autoplay = true;
-    video.width = 300;
-    video.height = 400;
+
+    // 모바일 전체 화면 적용
+    if (window.innerWidth <= 480) {
+      video.classList.add("fullscreen-video");
+    } else {
+      video.width = 300;
+      video.height = 200;
+    }
 
     const previewWrapper = document.querySelector(".preview-wrapper");
     previewWrapper.innerHTML = "";
@@ -131,9 +137,10 @@ $cameraBtn.addEventListener("click", async () => {
       stream.getTracks().forEach(track => track.stop());
 
       // 미리보기 + 스캔라인 복원
-      $preview.src = URL.createObjectURL(blob);
       previewWrapper.innerHTML = "";
       previewWrapper.appendChild($preview);
+      $preview.src = URL.createObjectURL(blob);
+
       const scanLine = document.createElement("div");
       scanLine.className = "scan-line";
       scanLine.id = "scan-line";
