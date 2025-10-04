@@ -218,3 +218,37 @@ h1 {
   cursor: pointer;
   box-shadow: 0 0 10px rgba(0,0,0,0.3);
 }
+/* 모바일 화면용 반응형 */
+@media (max-width: 480px) {
+  body {
+    padding-top: 20px; /* 상단 여백 줄임 */
+  }
+
+  h1 {
+    width: 90%;          /* 화면 가로 기준으로 폭 조정 */
+    font-size: 20px;     /* 제목 크기 축소 */
+  }
+
+  .container {
+    width: 90%;          /* 컨테이너 폭 축소 */
+    height: auto;        /* 높이 자동 조정 */
+    padding: 10px;
+  }
+
+  #preview {
+    max-height: 120px;   /* 이미지 미리보기 크기 조정 */
+  }
+
+  .capture-circle {
+    width: 35px;
+    height: 35px;
+    border-width: 3px;
+  }
+
+  .upload-btn,
+  .camera-btn,
+  .predict-btn {
+    padding: 6px 12px;   /* 버튼 크기 줄임 */
+    font-size: 14px;
+  }
+}
