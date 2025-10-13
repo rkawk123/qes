@@ -1,5 +1,5 @@
 const API = "https://backend-6i2t.onrender.com/predict";
-
+1
 const $dropArea = document.getElementById("drop-area");
 const $file = document.getElementById("file");
 const $preview = document.getElementById("preview");
