@@ -191,25 +191,6 @@ let resultChart = null;
 function drawChart(predictions) {
   const ctx = document.getElementById('resultChart').getContext('2d');
 
-  // 이미 그려진 차트가 있으면 제거
-  if (resultChart) {
-    resultChart.destroy();
-  }
-
-  const labels = predictions.map(p => p.label);
-  const data = predictions.map(p => (p.score * 100).toFixed(1));
-
-  resultChart = new Chart(ctx, {
-    type: 'bar',
-    data: {
-      labels: labels,
-      datasets: [{
-        label: '예측 확률 (%)',
-        data: data,
-        backgroundColor: [
-          'rgba(65,105,225function drawChart(predictions) {
-  const ctx = document.getElementById('resultChart').getContext('2d');
-
   if (resultChart) resultChart.destroy();
 
   const labels = predictions.map(p => p.label);
@@ -239,19 +220,18 @@ function drawChart(predictions) {
         legend: { display: false },
         tooltip: {
           callbacks: {
-            // 마우스 올리면 % 표시
             label: context => `${context.parsed.x}%`
           }
         }
       },
       scales: {
         x: {
-          display: false, // ✅ 가로축 눈금과 라벨 숨김
+          display: false, // 가로축 눈금과 라벨 숨김
           grid: { drawTicks: false, drawBorder: false, drawOnChartArea: false }
         },
         y: {
           ticks: { font: { size: 14 } },
-          grid: { drawTicks: false, drawBorder: false } // 세로축 눈금만 최소화
+          grid: { drawTicks: false, drawBorder: false } // 세로축 최소화
         }
       }
     }
