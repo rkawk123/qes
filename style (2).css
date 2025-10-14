@@ -1,0 +1,267 @@
+/*  전체 페이지 설정 */
+body {
+  display: flex;                 /* 중앙 정렬을 위한 Flex 컨테이너 */
+  justify-content: center;       /* 가로 중앙 정렬 */
+  align-items: flex-start;       /* 세로 정렬: 상단에서 시작 */
+  min-height: 100vh;             /* 화면 전체 높이 확보 */
+  margin: 0;
+  padding-top: 50px;             /* 상단 여백 */
+  background-color: #f0f4ff;     /* 배경색 */
+}
+
+/*  전체 래퍼 (제목 + 컨테이너)  */
+.wrapper {
+  display: flex;
+  flex-direction: column;        /* 세로 방향 정렬 */
+  align-items: center;           /* 가운데 정렬 */
+  gap: 10px;                     /* 요소 간 간격 */
+}
+
+/* 제목  */
+h1 {
+  text-align: center;
+  width: 320px;
+  margin: 0;
+  font-size: 24px;
+}
+
+/*  컨테이너 박스  */
+.container {
+  width: 800px;
+  height: 650px; /*600*/
+  border-radius: 10px;
+  box-shadow: 4px 4px 30px rgba(0, 0, 0, 0.2);
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+
+  padding: 15px;
+  gap: 10px;
+  background-color: rgba(0, 110, 255, 0.04);
+}
+
+/* 업로드 영역 (드롭존) */
+.header {
+  flex: 1;
+  width: 95%; /* 100*/
+  border: 2px dashed royalblue;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  padding: 20px;
+  text-align: center;
+  transition: 0.2s ease-in-out;
+}
+
+/* 드래그 시 강조 효과 */
+#drop-area.highlight {
+  border: 2px solid royalblue;
+  background-color: rgba(65, 105, 225, 0.1);
+}
+
+/* 숨겨진 파일 input */
+#file {
+  display: none;
+}
+
+/* 업로드 버튼, 카메라 촬영 버튼 */
+.upload-btn,
+.camera-btn {
+  background-color: royalblue;
+  color: white;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: background 0.3s ease;
+  margin-bottom: 8px;
+}
+
+.upload-btn:hover,
+.camera-btn:hover {
+  background-color: navy;
+}
+
+/* 설명 텍스트 */
+.header p {
+  color: black;
+  font-size: 14px;
+}
+
+/* 미리보기 이미지 */
+#preview {
+  max-width: 100%;
+  max-height: 150px;
+  border-radius: 6px;
+  object-fit: contain;
+  margin: 10px 0;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, .1);
+}
+
+/* 결과 텍스트 박스 */
+#result {
+  width: 100%;
+  min-height: 50px;
+  background: #f9f9f9;
+  border-radius: 6px;
+  padding: 8px;
+  font-size: 14px;
+  overflow-x: auto;
+  box-shadow: inset 0 0 5px rgba(0,0,0,0.1);
+  white-space: pre-wrap;
+}
+
+/* 하단 푸터 */
+.footer {
+  background-color: rgba(0, 110, 255, 0.075);
+  width: 100%;
+  height: 45px;
+  padding: 8px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+/* 예측 버튼 */
+.predict-btn {
+  background-color: royalblue;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.predict-btn:hover {
+  background-color: navy;
+}
+
+#loading {
+  display: none; /* 초기 숨김 */
+  font-weight: bold;
+  margin-left: 10px;
+  vertical-align: middle;
+}
+
+.loader {
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #3498db;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  display: inline-block;
+  animation: spin 1s linear infinite;
+  margin-left: 5px;
+  vertical-align: middle;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.preview-wrapper {
+  position: relative; /* scan-line 덮을 수 있게 */
+  display: inline-block;
+}
+
+#preview {
+  max-width: 100%;
+  max-height: 150px;
+  border-radius: 6px;
+  object-fit: contain;
+  margin: 10px 0;
+  box-shadow: 0 2px 10px rgba(0,0,0,.1);
+  display: block;
+}
+
+/* 스캔 라인 */
+.scan-line {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;      /* 업로드된 이미지 width에 맞춤 */
+  height: 4px;
+  background: rgba(50, 200, 50, 0.7);
+  box-shadow: 0 0 8px rgba(50, 200, 50, 0.8);
+  animation: scan 2s linear infinite;
+  display: none;
+}
+
+@keyframes scan {
+  0% { top: 0%; }
+  100% { top: 100%; }
+}
+
+/* DB 추가 코드 */
+#resultText {
+  width: 100%;
+  min-height: 80px;
+  background: #f3f3f3;
+  border-radius: 6px;
+  padding: 8px;
+  font-size: 14px;
+  box-shadow: inset 0 0 5px rgba(0,0,0,0.1);
+  margin-top: 8px;
+  white-space: pre-wrap;
+}
+
+/* 촬영 버튼 원 */
+.capture-circle {
+  position: absolute;
+  bottom: 15px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 50px;
+  height: 50px;
+  background-color: white;
+  border-radius: 50%;
+  border: 4px solid rgba(0, 110, 255, 0.7);
+  cursor: pointer;
+  box-shadow: 0 0 10px rgba(0,0,0,0.3);
+}
+
+/* 모바일 화면용 반응형 */
+@media (max-width: 480px) {
+  body {
+    padding-top: 20px;
+  }
+
+  h1 {
+    width: 90%;
+    font-size: 20px;
+  }
+
+  .container {
+    width: 90%;
+    height: auto;
+    padding: 10px;
+  }
+
+  #preview {
+    max-height: 120px;
+  }
+
+  .capture-circle {
+    width: 50px;
+    height: 50px;
+    border-width: 3px;
+  }
+
+  .upload-btn,
+  .camera-btn,
+  .predict-btn {
+    padding: 6px 12px;
+    font-size: 14px;
+  }
+}
+
+
