@@ -228,6 +228,11 @@ h1 {
   cursor: pointer;
   box-shadow: 0 0 10px rgba(0,0,0,0.3);
 }
+#resultChart {
+  margin-top: 10px;
+  width: 90% !important;
+  max-width: 400px;
+}
 
 /* 모바일 화면용 반응형 */
 
