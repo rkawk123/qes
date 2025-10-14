@@ -85,6 +85,8 @@ $btn.addEventListener("click", async () => {
         text += `${i + 1}. Label: ${p.label} (Score: ${(p.score * 100).toFixed(2)}%)\n`;
       });
       $result.textContent = text;
+
+      showPredictionResults(data.predictions);
     } else if (data.error) {
       $result.textContent = "백엔드 에러: " + data.error;
     } else {
@@ -182,4 +184,69 @@ setInterval(async () => {
     console.warn("서버 ping 실패:", err);
   }
 }, 5 * 60 * 1000); // 5분 = 300,000 ms
+
+// ===== 예측 결과 그래프 시각화 =====
+let resultChart = null;
+
+function drawChart(predictions) {
+  const ctx = document.getElementById('resultChart').getContext('2d');
+
+  // 이미 그려진 차트가 있으면 제거
+  if (resultChart) {
+    resultChart.destroy();
+  }
+
+  const labels = predictions.map(p => p.label);
+  const data = predictions.map(p => (p.score * 100).toFixed(1));
+
+  resultChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: labels,
+      datasets: [{
+        label: '예측 확률 (%)',
+        data: data,
+        backgroundColor: [
+          'rgba(65,105,225,0.7)',
+          'rgba(100,149,237,0.7)',
+          'rgba(135,206,250,0.7)'
+        ],
+        borderColor: ['royalblue', 'cornflowerblue', 'skyblue'],
+        borderWidth: 2,
+        borderRadius: 6
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: function(context) {
+              return context.parsed.y + '%';
+            }
+          }
+        }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          max: 100,
+          ticks: {
+            callback: value => value + '%'
+          }
+        }
+      }
+    }
+  });
+}
+
+function showPredictionResults(predictions) {
+  const resultDiv = document.getElementById("resultText");
+  resultDiv.textContent = predictions
+    .map(p => `${p.label}: ${(p.confidence * 100).toFixed(1)}%`)
+    .join("\n");
+
+  drawChart(predictions);
+}
 
