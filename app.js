@@ -14,17 +14,6 @@ const $captureBtn = document.createElement("div");
 const $video = document.createElement("video");
 const $canvas = document.createElement("canvas");
 
-// ===== showPredictionResults 함수 (바깥에서 정의) =====
-function showPredictionResults(predictions) {
-  // resultText에도 표시
-  $resultText.textContent = predictions
-    .map(p => `${p.label}: ${(p.score * 100).toFixed(1)}%`)
-    .join("\n");
-
-  // 그래프 그리기
-  drawChart(predictions);
-}
-
 // 드래그 & 드롭
 ["dragenter", "dragover"].forEach(eventName => {
   $dropArea.addEventListener(eventName, e => {
@@ -90,22 +79,23 @@ $btn.addEventListener("click", async () => {
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || "요청 실패");
 
+    // 예측 결과 표시
     if (data.predictions?.length) {
-      let text = "Top Predictions:\n";
-      data.predictions.forEach((p, i) => {
-        text += `${i + 1}. Label: ${p.label} (Score: ${(p.score * 100).toFixed(2)}%)\n`;
-      });
-      $result.textContent = text;
+      $result.textContent =
+        "Top Predictions:\n" +
+        data.predictions
+          .map((p, i) => `${i + 1}. ${p.label} (Score: ${(p.score * 100).toFixed(2)}%)`)
+          .join("\n");
 
-      // ✅ 바깥에 정의한 함수 호출
-      showPredictionResults(data.predictions);
-
+      // 그래프 그리기
+      drawChart(data.predictions);
     } else if (data.error) {
       $result.textContent = "백엔드 에러: " + data.error;
     } else {
       $result.textContent = "예측 결과를 받지 못했습니다.";
     }
 
+    // DB 세탁 정보 표시
     if (data.ko_name) {
       $resultText.innerHTML = `
         <h3>${data.ko_name} (${data.predicted_fabric})</h3>
@@ -140,7 +130,6 @@ $cameraBtn.addEventListener("click", async () => {
     $previewWrapper.innerHTML = "";
     $previewWrapper.appendChild($video);
 
-    // 비디오 메타데이터 로드 완료 대기
     await new Promise(resolve => {
       $video.onloadedmetadata = () => {
         $video.play();
@@ -157,7 +146,6 @@ $cameraBtn.addEventListener("click", async () => {
       $canvas.getContext("2d").drawImage($video, 0, 0);
 
       const blob = await new Promise(resolve => $canvas.toBlob(resolve, "image/png"));
-
       stream.getTracks().forEach(track => track.stop());
 
       $preview.src = URL.createObjectURL(blob);
@@ -178,7 +166,7 @@ $cameraBtn.addEventListener("click", async () => {
   }
 });
 
-// 5분마다 서버 ping
+// 5분마다 서버에 ping 보내기
 setInterval(async () => {
   try {
     const res = await fetch("https://backend-6i2t.onrender.com/ping");
@@ -192,7 +180,7 @@ setInterval(async () => {
 let resultChart = null;
 
 function drawChart(predictions) {
-  const ctx = document.getElementById('resultChart').getContext('2d');
+  const ctx = document.getElementById("resultChart").getContext("2d");
 
   if (resultChart) resultChart.destroy();
 
@@ -200,25 +188,28 @@ function drawChart(predictions) {
   const data = predictions.map(p => (p.score * 100).toFixed(1));
 
   resultChart = new Chart(ctx, {
-    type: 'bar',
+    type: "bar",
     data: {
       labels: labels,
-      datasets: [{
-        label: '예측 확률',
-        data: data,
-        backgroundColor: [
-          'rgba(65,105,225,0.7)',
-          'rgba(100,149,237,0.7)',
-          'rgba(135,206,250,0.7)'
-        ],
-        borderColor: ['royalblue', 'cornflowerblue', 'skyblue'],
-        borderWidth: 2,
-        borderRadius: 6
-      }]
+      datasets: [
+        {
+          label: "예측 확률",
+          data: data,
+          backgroundColor: [
+            "rgba(65,105,225,0.7)",
+            "rgba(100,149,237,0.7)",
+            "rgba(135,206,250,0.7)"
+          ],
+          borderColor: ["royalblue", "cornflowerblue", "skyblue"],
+          borderWidth: 2,
+          borderRadius: 6
+        }
+      ]
     },
     options: {
-      indexAxis: 'y',
+      indexAxis: "y",
       responsive: true,
+      maintainAspectRatio: false,   // 높이와 폭 자유롭게
       plugins: {
         legend: { display: false },
         tooltip: {
@@ -226,6 +217,9 @@ function drawChart(predictions) {
             label: context => `${context.parsed.x}%`
           }
         }
+      },
+      layout: {
+        padding: { left: 20, right: 0 } // 오른쪽 여백 최소, 살짝 치우치기
       },
       scales: {
         x: {
