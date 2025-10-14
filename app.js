@@ -52,8 +52,8 @@ function showPreview(fileOrBlob) {
       $scanLine.style.width = $preview.clientWidth + "px";
     };
     $preview.src = e.target.result;
-    $result.textContent = "";
-    $resultText.innerHTML = "";
+    $result.textContent = "";  // 예측 텍스트만 초기화
+    // $resultText는 초기화하지 않음 → 세탁정보 유지
   };
   reader.readAsDataURL(fileOrBlob);
 }
@@ -72,14 +72,13 @@ $btn.addEventListener("click", async () => {
   $loader.style.display = "inline-block";
   $scanLine.style.display = "block";
   $result.textContent = "";
-  $resultText.innerHTML = "";
 
   try {
     const res = await fetch(API, { method: "POST", body: fd });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || "요청 실패");
 
-    // 예측 결과 표시
+    // 예측 결과
     if (data.predictions?.length) {
       $result.textContent =
         "Top Predictions:\n" +
@@ -95,7 +94,7 @@ $btn.addEventListener("click", async () => {
       $result.textContent = "예측 결과를 받지 못했습니다.";
     }
 
-    // DB 세탁 정보 표시
+    // 세탁정보 출력
     if (data.ko_name) {
       $resultText.innerHTML = `
         <h3>${data.ko_name} (${data.predicted_fabric})</h3>
@@ -103,7 +102,10 @@ $btn.addEventListener("click", async () => {
         <p>🌬️ 건조법: ${data.dry_method}</p>
         <p>⚠️ 주의사항: ${data.special_note}</p>
       `;
+    } else {
+      $resultText.innerHTML = "";
     }
+
   } catch (e) {
     $result.textContent = "에러: " + e.message;
     $resultText.innerText = "에러: " + e.message;
@@ -146,6 +148,8 @@ $cameraBtn.addEventListener("click", async () => {
       $canvas.getContext("2d").drawImage($video, 0, 0);
 
       const blob = await new Promise(resolve => $canvas.toBlob(resolve, "image/png"));
+
+      // 스트림 종료
       stream.getTracks().forEach(track => track.stop());
 
       $preview.src = URL.createObjectURL(blob);
@@ -156,6 +160,7 @@ $cameraBtn.addEventListener("click", async () => {
       $scanLine.id = "scan-line";
       $previewWrapper.appendChild($scanLine);
 
+      // 바로 예측 실행
       $file._cameraBlob = blob;
       $loader.style.display = "inline-block";
       $scanLine.style.display = "block";
@@ -166,7 +171,7 @@ $cameraBtn.addEventListener("click", async () => {
   }
 });
 
-// 5분마다 서버에 ping 보내기
+// 서버 ping
 setInterval(async () => {
   try {
     const res = await fetch("https://backend-6i2t.onrender.com/ping");
@@ -176,11 +181,10 @@ setInterval(async () => {
   }
 }, 5 * 60 * 1000);
 
-// ===== 예측 결과 그래프 시각화 =====
+// ===== 그래프 시각화 =====
 let resultChart = null;
-
 function drawChart(predictions) {
-  const ctx = document.getElementById("resultChart").getContext("2d");
+  const ctx = document.getElementById('resultChart').getContext('2d');
 
   if (resultChart) resultChart.destroy();
 
@@ -188,28 +192,21 @@ function drawChart(predictions) {
   const data = predictions.map(p => (p.score * 100).toFixed(1));
 
   resultChart = new Chart(ctx, {
-    type: "bar",
+    type: 'bar',
     data: {
-      labels: labels,
-      datasets: [
-        {
-          label: "예측 확률",
-          data: data,
-          backgroundColor: [
-            "rgba(65,105,225,0.7)",
-            "rgba(100,149,237,0.7)",
-            "rgba(135,206,250,0.7)"
-          ],
-          borderColor: ["royalblue", "cornflowerblue", "skyblue"],
-          borderWidth: 2,
-          borderRadius: 6
-        }
-      ]
+      labels,
+      datasets: [{
+        label: '예측 확률',
+        data,
+        backgroundColor: ['rgba(65,105,225,0.7)', 'rgba(100,149,237,0.7)', 'rgba(135,206,250,0.7)'],
+        borderColor: ['royalblue', 'cornflowerblue', 'skyblue'],
+        borderWidth: 2,
+        borderRadius: 6
+      }]
     },
     options: {
-      indexAxis: "y",
+      indexAxis: 'y',
       responsive: true,
-      maintainAspectRatio: false,   // 높이와 폭 자유롭게
       plugins: {
         legend: { display: false },
         tooltip: {
@@ -218,18 +215,9 @@ function drawChart(predictions) {
           }
         }
       },
-      layout: {
-        padding: { left: 20, right: 0 } // 오른쪽 여백 최소, 살짝 치우치기
-      },
       scales: {
-        x: {
-          display: false,
-          grid: { drawTicks: false, drawBorder: false, drawOnChartArea: false }
-        },
-        y: {
-          ticks: { font: { size: 14 } },
-          grid: { drawTicks: false, drawBorder: false }
-        }
+        x: { display: false, grid: { drawTicks: false, drawBorder: false, drawOnChartArea: false } },
+        y: { ticks: { font: { size: 14 } }, grid: { drawTicks: false, drawBorder: false } }
       }
     }
   });
