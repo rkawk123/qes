@@ -230,6 +230,7 @@ h1 {
 }
 
 /* 모바일 화면용 반응형 */
+
 @media (max-width: 480px) {
   body {
     padding-top: 20px;
@@ -241,21 +242,42 @@ h1 {
   }
 
   .container {
-    width: 90%;
+    width: 95%;
+    min-width: 340px; /* 폭이 너무 좁아지지 않도록 */
     height: auto;
     padding: 10px;
   }
 
+  /* 모바일에서 드래그앤드롭 영역 단순화 */
+  .header {
+    border: none !important;         /* 점선 테두리 제거 */
+    background: none !important;     /* 배경색 제거 */
+    padding: 10px;
+  }
+
+  .header p {
+    display: none;                   /* 안내 문구 숨김 */
+  }
+
+  /* 점선 강조 효과 비활성화 */
+  #drop-area.highlight {
+    border: none !important;
+    background: none !important;
+  }
+
+  /* 미리보기 이미지 크기 조정 */
   #preview {
     max-height: 120px;
   }
 
+  /* 촬영 버튼 크기 유지 */
   .capture-circle {
     width: 50px;
     height: 50px;
     border-width: 3px;
   }
 
+  /* 버튼 크기 줄이기 */
   .upload-btn,
   .camera-btn,
   .predict-btn {
@@ -263,5 +285,3 @@ h1 {
     font-size: 14px;
   }
 }
-
-
