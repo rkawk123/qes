@@ -86,7 +86,16 @@ $btn.addEventListener("click", async () => {
       });
       $result.textContent = text;
 
-      showPredictionResults(data.predictions);
+     function showPredictionResults(predictions) {
+  // resultText에도 표시
+  $resultText.textContent = predictions
+    .map(p => `${p.label}: ${(p.score * 100).toFixed(1)}%`)
+    .join("\n");
+
+  // 그래프 그리기
+  drawChart(predictions);
+}
+
     } else if (data.error) {
       $result.textContent = "백엔드 에러: " + data.error;
     } else {
