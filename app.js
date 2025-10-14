@@ -207,6 +207,22 @@ function drawChart(predictions) {
         label: '예측 확률 (%)',
         data: data,
         backgroundColor: [
+          'rgba(65,105,225function drawChart(predictions) {
+  const ctx = document.getElementById('resultChart').getContext('2d');
+
+  if (resultChart) resultChart.destroy();
+
+  const labels = predictions.map(p => p.label);
+  const data = predictions.map(p => (p.score * 100).toFixed(1));
+
+  resultChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: labels,
+      datasets: [{
+        label: '예측 확률',
+        data: data,
+        backgroundColor: [
           'rgba(65,105,225,0.7)',
           'rgba(100,149,237,0.7)',
           'rgba(135,206,250,0.7)'
@@ -217,36 +233,27 @@ function drawChart(predictions) {
       }]
     },
     options: {
+      indexAxis: 'y', // 세로축에 클래스 표시
       responsive: true,
       plugins: {
         legend: { display: false },
         tooltip: {
           callbacks: {
-            label: function(context) {
-              return context.parsed.y + '%';
-            }
+            // 마우스 올리면 % 표시
+            label: context => `${context.parsed.x}%`
           }
         }
       },
       scales: {
+        x: {
+          display: false, // ✅ 가로축 눈금과 라벨 숨김
+          grid: { drawTicks: false, drawBorder: false, drawOnChartArea: false }
+        },
         y: {
-          beginAtZero: true,
-          max: 100,
-          ticks: {
-            callback: value => value + '%'
-          }
+          ticks: { font: { size: 14 } },
+          grid: { drawTicks: false, drawBorder: false } // 세로축 눈금만 최소화
         }
       }
     }
   });
 }
-
-function showPredictionResults(predictions) {
-  const resultDiv = document.getElementById("resultText");
-  resultDiv.textContent = predictions
-    .map(p => `${p.label}: ${(p.confidence * 100).toFixed(1)}%`)
-    .join("\n");
-
-  drawChart(predictions);
-}
-
