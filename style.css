@@ -28,7 +28,8 @@ h1 {
 /*  컨테이너 박스  */
 .container {
   width: 800px;
-  height: 650px; /*600*/
+  min-height: 650px; /* 필요 최소 높이 */
+  height: auto;       /* 자동으로 늘어나도록 */
   border-radius: 10px;
   box-shadow: 4px 4px 30px rgba(0, 0, 0, 0.2);
 
