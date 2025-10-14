@@ -234,7 +234,7 @@ h1 {
   max-height: 150px;      /* 그래프 높이 줄이기 */
   width: 250px;           /* 그래프 너비 조절 */
   margin-left: auto;      /* 왼쪽 여백 자동 */
-  margin-right: 20px;     /* 오른쪽 여백 조금 */
+  margin-right: 80px;     /* 오른쪽 여백 조금 */
 }
 
 /* 모바일 화면용 반응형 */
