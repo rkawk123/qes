@@ -14,6 +14,17 @@ const $captureBtn = document.createElement("div");
 const $video = document.createElement("video");
 const $canvas = document.createElement("canvas");
 
+// ===== showPredictionResults 함수 (바깥에서 정의) =====
+function showPredictionResults(predictions) {
+  // resultText에도 표시
+  $resultText.textContent = predictions
+    .map(p => `${p.label}: ${(p.score * 100).toFixed(1)}%`)
+    .join("\n");
+
+  // 그래프 그리기
+  drawChart(predictions);
+}
+
 // 드래그 & 드롭
 ["dragenter", "dragover"].forEach(eventName => {
   $dropArea.addEventListener(eventName, e => {
@@ -86,15 +97,8 @@ $btn.addEventListener("click", async () => {
       });
       $result.textContent = text;
 
-     function showPredictionResults(predictions) {
-  // resultText에도 표시
-  $resultText.textContent = predictions
-    .map(p => `${p.label}: ${(p.score * 100).toFixed(1)}%`)
-    .join("\n");
-
-  // 그래프 그리기
-  drawChart(predictions);
-}
+      // ✅ 바깥에 정의한 함수 호출
+      showPredictionResults(data.predictions);
 
     } else if (data.error) {
       $result.textContent = "백엔드 에러: " + data.error;
@@ -120,7 +124,6 @@ $btn.addEventListener("click", async () => {
 });
 
 // 카메라 촬영
-
 $cameraBtn.addEventListener("click", async () => {
   try {
     const stream = await navigator.mediaDevices.getUserMedia({
@@ -149,28 +152,22 @@ $cameraBtn.addEventListener("click", async () => {
     $previewWrapper.appendChild($captureBtn);
 
     $captureBtn.addEventListener("click", async () => {
-
-      // video 크기 로드 후 캡처
       $canvas.width = $video.videoWidth;
       $canvas.height = $video.videoHeight;
       $canvas.getContext("2d").drawImage($video, 0, 0);
 
       const blob = await new Promise(resolve => $canvas.toBlob(resolve, "image/png"));
 
-      // 스트림 종료
       stream.getTracks().forEach(track => track.stop());
 
-      // 미리보기 표시
       $preview.src = URL.createObjectURL(blob);
       $previewWrapper.innerHTML = "";
       $previewWrapper.appendChild($preview);
 
-      // 스캔라인 복원
       $scanLine.className = "scan-line";
       $scanLine.id = "scan-line";
       $previewWrapper.appendChild($scanLine);
 
-      // 바로 예측 실행
       $file._cameraBlob = blob;
       $loader.style.display = "inline-block";
       $scanLine.style.display = "block";
@@ -181,18 +178,15 @@ $cameraBtn.addEventListener("click", async () => {
   }
 });
 
-
-// 5분마다 서버에 ping 보내기
+// 5분마다 서버 ping
 setInterval(async () => {
   try {
     const res = await fetch("https://backend-6i2t.onrender.com/ping");
-    if (res.ok) {
-      console.log("서버 ping 성공");
-    }
+    if (res.ok) console.log("서버 ping 성공");
   } catch (err) {
     console.warn("서버 ping 실패:", err);
   }
-}, 5 * 60 * 1000); // 5분 = 300,000 ms
+}, 5 * 60 * 1000);
 
 // ===== 예측 결과 그래프 시각화 =====
 let resultChart = null;
@@ -223,7 +217,7 @@ function drawChart(predictions) {
       }]
     },
     options: {
-      indexAxis: 'y', // 세로축에 클래스 표시
+      indexAxis: 'y',
       responsive: true,
       plugins: {
         legend: { display: false },
@@ -235,12 +229,12 @@ function drawChart(predictions) {
       },
       scales: {
         x: {
-          display: false, // 가로축 눈금과 라벨 숨김
+          display: false,
           grid: { drawTicks: false, drawBorder: false, drawOnChartArea: false }
         },
         y: {
           ticks: { font: { size: 14 } },
-          grid: { drawTicks: false, drawBorder: false } // 세로축 최소화
+          grid: { drawTicks: false, drawBorder: false }
         }
       }
     }
