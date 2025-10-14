@@ -52,8 +52,7 @@ function showPreview(fileOrBlob) {
       $scanLine.style.width = $preview.clientWidth + "px";
     };
     $preview.src = e.target.result;
-    $result.textContent = "";  // 예측 텍스트만 초기화
-    // $resultText는 초기화하지 않음 → 세탁정보 유지
+    $result.textContent = ""; // 예측 텍스트만 초기화
   };
   reader.readAsDataURL(fileOrBlob);
 }
@@ -76,9 +75,10 @@ $btn.addEventListener("click", async () => {
   try {
     const res = await fetch(API, { method: "POST", body: fd });
     const data = await res.json();
+    console.log("서버 응답:", data); // ✅ 디버그용 로그
     if (!res.ok) throw new Error(data.error || "요청 실패");
 
-    // 예측 결과
+    // 예측 결과 출력
     if (data.predictions?.length) {
       $result.textContent =
         "Top Predictions:\n" +
@@ -86,21 +86,25 @@ $btn.addEventListener("click", async () => {
           .map((p, i) => `${i + 1}. ${p.label} (Score: ${(p.score * 100).toFixed(2)}%)`)
           .join("\n");
 
-      // 그래프 그리기
-      drawChart(data.predictions);
+      // ✅ 그래프 오류로 전체 중단 방지
+      try {
+        drawChart(data.predictions);
+      } catch (err) {
+        console.warn("그래프 그리기 중 오류:", err);
+      }
     } else if (data.error) {
       $result.textContent = "백엔드 에러: " + data.error;
     } else {
       $result.textContent = "예측 결과를 받지 못했습니다.";
     }
 
-    // 세탁정보 출력
-    if (data.ko_name) {
+    // ✅ 세탁정보 출력 (필드 유무와 상관없이 표시)
+    if (data.wash_method || data.dry_method || data.special_note || data.ko_name) {
       $resultText.innerHTML = `
-        <h3>${data.ko_name} (${data.predicted_fabric})</h3>
-        <p>🧺 세탁법: ${data.wash_method}</p>
-        <p>🌬️ 건조법: ${data.dry_method}</p>
-        <p>⚠️ 주의사항: ${data.special_note}</p>
+        <h3>${data.ko_name || ''} (${data.predicted_fabric || ''})</h3>
+        <p>🧺 세탁법: ${data.wash_method || '정보 없음'}</p>
+        <p>🌬️ 건조법: ${data.dry_method || '정보 없음'}</p>
+        <p>⚠️ 주의사항: ${data.special_note || '정보 없음'}</p>
       `;
     } else {
       $resultText.innerHTML = "";
@@ -184,12 +188,25 @@ setInterval(async () => {
 // ===== 그래프 시각화 =====
 let resultChart = null;
 function drawChart(predictions) {
-  const ctx = document.getElementById('resultChart').getContext('2d');
+  const canvas = document.getElementById('resultChart');
+  if (!canvas) {
+    console.warn("resultChart 캔버스를 찾을 수 없습니다.");
+    return;
+  }
+  const ctx = canvas.getContext('2d');
+  if (!ctx) {
+    console.warn("canvas context를 가져오지 못했습니다.");
+    return;
+  }
+  if (!predictions?.length) {
+    console.warn("예측 결과가 없습니다.");
+    return;
+  }
 
   if (resultChart) resultChart.destroy();
 
   const labels = predictions.map(p => p.label);
-  const data = predictions.map(p => (p.score * 100).toFixed(1));
+  const data = predictions.map(p => (p.score ? (p.score * 100).toFixed(1) : 0));
 
   resultChart = new Chart(ctx, {
     type: 'bar',
@@ -198,7 +215,11 @@ function drawChart(predictions) {
       datasets: [{
         label: '예측 확률',
         data,
-        backgroundColor: ['rgba(65,105,225,0.7)', 'rgba(100,149,237,0.7)', 'rgba(135,206,250,0.7)'],
+        backgroundColor: [
+          'rgba(65,105,225,0.7)',
+          'rgba(100,149,237,0.7)',
+          'rgba(135,206,250,0.7)'
+        ],
         borderColor: ['royalblue', 'cornflowerblue', 'skyblue'],
         borderWidth: 2,
         borderRadius: 6
