@@ -1,53 +1,128 @@
-/*  전체 페이지 설정 */
 body {
-  display: flex;                 /* 중앙 정렬을 위한 Flex 컨테이너 */
-  justify-content: center;       /* 가로 중앙 정렬 */
-  align-items: flex-start;       /* 세로 정렬: 상단에서 시작 */
-  min-height: 100vh;             /* 화면 전체 높이 확보 */
+  max-width: 100%;
+  font-family: Arial, Helvetica, "Apple SD Gothic Neo", "맑은 고딕", sans-serif;
   margin: 0;
-  padding-top: 50px;             /* 상단 여백 */
+  padding: 0;
+  overflow-x: hidden; /* 가로 스크롤 차단 */
   background-color: #f0f4ff;     /* 배경색 */
 }
 
-/*  전체 래퍼 (제목 + 컨테이너)  */
-.wrapper {
+html, body {
+  width: 100%;
+  overflow-x: hidden;
+} /*효자 녀석*/
+
+/* 헤더 (로고 + 메뉴) */
+header {
   display: flex;
-  flex-direction: column;        /* 세로 방향 정렬 */
-  align-items: center;           /* 가운데 정렬 */
-  gap: 10px;                     /* 요소 간 간격 */
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  padding: 25px 40px 10px 40px;
+  box-sizing: border-box; /* ✅ padding 포함한 폭 계산 */
+  border-bottom: 1px solid #e5e5e5;
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+}
+
+/* 헤더 내부 래퍼 (선택사항) */
+header .header-inner {
+  width: 100%;
+  max-width: 900px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-sizing: border-box;
+}
+
+/* 로고 */
+.logo {
+  display: flex;
+  align-items: center;
+  padding-bottom: 15px;
+}
+
+.logo .dot {
+  width: 14px;
+  height: 14px;
+  background: #232323;
+  border-radius: 50%;
+  margin-right: 4px;
+  display: inline-block;
+}
+
+.logo .brand {
+  margin-left: 8px;
+  font-size: 1.2rem;
+  font-weight: bold;
+  letter-spacing: 1px;
+  color: #232323;
+}
+
+/* 네비게이션 메뉴 */
+nav {
+  display: flex;
+  align-items: center;
+  gap: 20px; /* 메뉴 간격 */
+}
+
+nav a {
+  color: #232323;
+  text-decoration: none;
+  margin-left: 28px;
+  font-size: 1.05rem;
+  transition: color 0.2s ease;
+}
+
+nav a:hover {
+  color: royalblue;
 }
 
 /* 제목  */
 h1 {
   text-align: center;
-  width: 320px;
-  margin: 0;
+  width: 100%;
   font-size: 24px;
 }
 
-/*  컨테이너 박스  */
-.container {
-  width: 800px;
-  min-height: 650px; /* 필요 최소 높이 */
-  height: auto;       /* 자동으로 늘어나도록 */
-  border-radius: 10px;
-  box-shadow: 4px 4px 30px rgba(0, 0, 0, 0.2);
+/* 전체 래퍼 */
+.wrapper {
+  flex-direction: column;        /* 세로 방향 정렬 */
+  align-items: center;           /* 가운데 정렬 ... */
+  display: flex;                 /* 중앙 정렬을 위한 Flex 컨테이너 ... */
+  justify-content: center;       /* 가로 중앙 정렬 */
+  align-items: flex-start;       /* 세로 정렬: 상단에서 시작 */
+  min-height: 100vh;             /* 화면 전체 높이 확보 */
+  padding-top: 30px;             /* 상단 여백 */
+  gap: 20px;                     /* 요소 간 간격 */
+}
 
+/* 컨테이너 */
+.container {
+  width: 90%;
+  max-width: 800px;
+  min-height: 650px;        /* 고정 height 대신 최소 높이 */
+  height: auto;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: space-between;
-
+  justify-content: flex-start;
+  align-items: center;      /* 자식 요소 중앙 정렬 */
+  margin: 0 auto;
   padding: 15px;
   gap: 10px;
   background-color: rgba(0, 110, 255, 0.04);
+  box-sizing: border-box;
 }
 
 /* 업로드 영역 (드롭존) */
 .header {
   flex: 1;
   width: 95%; /* 100*/
-  border: 2px dashed royalblue;
+  border: 2px dashed royalblue;  /*점선 박스*/
   border-radius: 10px;
   display: flex;
   align-items: center;
@@ -63,15 +138,14 @@ h1 {
   border: 2px solid royalblue;
   background-color: rgba(65, 105, 225, 0.1);
 }
-
-/* 숨겨진 파일 input */
 #file {
   display: none;
 }
 
-/* 업로드 버튼, 카메라 촬영 버튼 */
+/* 버튼 */
 .upload-btn,
-.camera-btn {
+.camera-btn,
+.predict-btn {
   background-color: royalblue;
   color: white;
   padding: 8px 16px;
@@ -82,69 +156,61 @@ h1 {
   margin-bottom: 8px;
 }
 
+.predict-btn {
+  border: none;
+  font-size: 16px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
 .upload-btn:hover,
-.camera-btn:hover {
+.camera-btn:hover,
+.predict-btn:hover {
   background-color: navy;
 }
 
-/* 설명 텍스트 */
-.header p {
-  color: black;
-  font-size: 14px;
-}
-
-/* 미리보기 이미지 */
+/* 미리보기 */
 #preview {
   max-width: 100%;
-  max-height: 150px;
+  max-height: 150px;  /*최대 폭 150*/
+  height: auto; /**/
   border-radius: 6px;
-  object-fit: contain;
+  object-fit: cover;      /* 이미지 비율 유지하며 꽉 채우기 */
   margin: 10px 0;
   box-shadow: 0 2px 10px rgba(0, 0, 0, .1);
+  display: block;
 }
 
 /* 결과 텍스트 박스 */
-#result {
+#result, #resultText {
   width: 100%;
-  min-height: 50px;
+  min-height: 80px;
   background: #f9f9f9;
   border-radius: 6px;
-  padding: 8px;
+  padding: 6px;
   font-size: 14px;
+  font-family: 'Arial', 'Helvetica', sans-serif;
   overflow-x: auto;
   box-shadow: inset 0 0 5px rgba(0,0,0,0.1);
   white-space: pre-wrap;
 }
 
-/* 하단 푸터 */
-.footer {
-  background-color: rgba(0, 110, 255, 0.075);
-  width: 100%;
-  height: 45px;
-  padding: 8px;
-  border-radius: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 10px;
+#result {
+  line-height: 1.3;
 }
 
-/* 예측 버튼 */
-.predict-btn {
-  background-color: royalblue;
-  color: white;
-  border: none;
-  padding: 8px 16px;
-  border-radius: 6px;
-  font-size: 16px;
-  cursor: pointer;
-  transition: background 0.3s ease;
+#resultText {
+  line-height: 1;
+  margin: 0;
 }
 
-.predict-btn:hover {
-  background-color: navy;
+#resultText h3,
+#resultText p {
+  margin: 0;
+  padding: 0;
 }
 
+/* 로딩 애니메이션 */
 #loading {
   display: none; /* 초기 숨김 */
   font-weight: bold;
@@ -169,22 +235,17 @@ h1 {
   100% { transform: rotate(360deg); }
 }
 
+/* 미리보기 스캔 */
 .preview-wrapper {
-  position: relative; /* scan-line 덮을 수 있게 */
-  display: inline-block;
+  position: relative;      /* scan-line 덮을 수 있게 */
+  display: flex;          /* flex로 고정 */
+  width: auto;          /* auto → 이미지 폭 맞춤 */
+  height: auto;
+  justify-content: center; /* 가로 중앙 정렬 */
+  align-items: center;     /* 세로 중앙 정렬 */
+  overflow: hidden;       /* 스캔 라인 및 이미지가 박스 밖으로 안 나가게 */
 }
 
-#preview {
-  max-width: 100%;
-  max-height: 150px;
-  border-radius: 6px;
-  object-fit: contain;
-  margin: 10px 0;
-  box-shadow: 0 2px 10px rgba(0,0,0,.1);
-  display: block;
-}
-
-/* 스캔 라인 */
 .scan-line {
   position: absolute;
   left: 0;
@@ -202,20 +263,7 @@ h1 {
   100% { top: 100%; }
 }
 
-/* DB 추가 코드 */
-#resultText {
-  width: 100%;
-  min-height: 80px;
-  background: #f3f3f3;
-  border-radius: 6px;
-  padding: 8px;
-  font-size: 14px;
-  box-shadow: inset 0 0 5px rgba(0,0,0,0.1);
-  margin-top: 8px;
-  white-space: pre-wrap;
-}
-
-/* 촬영 버튼 원 */
+/* 촬영 버튼 */
 .capture-circle {
   position: absolute;
   bottom: 15px;
@@ -230,50 +278,107 @@ h1 {
   box-shadow: 0 0 10px rgba(0,0,0,0.3);
 }
 
-#resultChart {
-  display: block;
-  max-height: 150px;      /* 그래프 높이 줄이기 */
-  width: 250px;           /* 그래프 너비 조절 */
-  margin-left: auto;      /* 왼쪽 여백 자동 */
-  margin-right: 80px;     /* 오른쪽 여백 조금 */
+/* 쇼핑몰 링크 */
+.shop-links {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 40px; /* 이미지 간격 */
+  margin-top: 20px;
 }
 
-/* 모바일 화면용 반응형 */
+.shop-links a {
+  display: block;
+  text-decoration: none;
+  transition: transform 0.2s ease;
+}
+
+.shop-links img {
+  width: 230px; /* 원하는 크기로 조절 가능, 100 */
+  height: auto;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  filter: none; /* 흑백 제거 */
+}
+
+.shop-links img:hover {
+  transform: scale(1.1);
+  box-shadow: 0 6px 12px rgba(0,0,0,0.2);
+}
+
+/* 푸터 */
+.footer {
+  width: 100%;
+  padding: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  box-sizing: border-box; /* 패딩 포함해서 폭 계산 */
+  flex-shrink: 0;         /* 컨테이너 줄어들어도 푸터 안쪽 유지 */
+}
+
+/* 모바일 */
 @media (max-width: 480px) {
   body {
-    padding-top: 20px;
+    /*padding-top: 20px;  /*상단 여백*/
+  }
+
+  header {
+    flex-direction: column;     /* 위아래로 배치 */
+    justify-content: center;    /* 가로 중앙 */
+    align-items: center;        /* 세로 중앙 */
+    padding: 15px 0;            /* 상하 여백 줄이기 */
+  }
+
+  .brand {
+    font-size: 18px;
+  }
+
+  .logo {
+    margin-bottom: 10px;
+    margin-top: 10px;
+    align-items: center;  /* 세로 가운데 맞춤 */
+    justify-content: center; /* 가로 가운데 맞춤 */
+  }
+
+  nav {
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;        /* 가운데 정렬 */
+    gap: 10px;
+    margin-right: 20px; /*시각적 중심 보정*/
   }
 
   h1 {
-    width: 90%;
+    width: 90%;        /*제목 폭*/
     font-size: 20px;
+    margin: 20px;  /**/
+  }
+
+  p {
+    white-space: normal; /* 줄바꿈 허용 */
+    word-break: keep-all; /* 단어 단위로 줄바꿈 */
+    text-align: center;
   }
 
   .container {
-    width: 95%;
-    min-width: 340px;
+    width: 100%; /*90*/
     height: auto;
-    padding: 10px;
-  }
-
-  /* 모바일에서 드래그앤드롭 영역 단순화 */
-  .header {
-    border: none !important;
-    background: none !important;
-    padding: 10px;
-  }
-
-  .header p {
-    display: none;
-  }
-
-  #drop-area.highlight {
-    border: none !important;
-    background: none !important;
+    max-width: 360px;
+    padding: 20px; /*10*/
+    align-items: center;
   }
 
   #preview {
-    max-height: 120px;
+    max-height: 150px; /*120*/
+    width: 100%; /**/
+  }
+
+  #resultText, #result {
+    max-width: 360px;
+    margin: 0 auto;
   }
 
   .capture-circle {
@@ -289,29 +394,13 @@ h1 {
     font-size: 14px;
   }
 
-  /* 그래프 반응형 조정 */
-  #resultChart {
-    width: 100%;             /* 화면 폭에 맞춤 */
-    max-height: 150px;       /* 최대 높이 유지 */
-    margin: 0 auto 10px auto; /* 아래 여백 확보 */
+  .shop-links {
+    justify-content: center; /* 가운데 정렬 유지 */
+    gap: 15px;             /* 이미지 간격 축소 */
   }
 
-#resultText {
-  width: 100%;
-  min-height: 80px;
-  max-height: none;       /* 제한 제거 */
-  overflow: visible;
-  background: #f3f3f3;
-  border-radius: 6px;
-  padding: 8px;
-  font-size: 14px;
-  line-height: 1.4;       /* 줄 간격 조절 */
-  letter-spacing: 0.5px;  /* 글자 간격 조절 */
-  box-shadow: inset 0 0 5px rgba(0,0,0,0.1);
-  margin-top: 8px;
-  white-space: pre-wrap;
-  word-break: break-word;  /* 너무 긴 단어 줄 바꿈 */
+  .shop-links img {
+    width: 120px;           /* 모바일에 맞는 이미지 크기 */
+    height: auto;
+  }
 }
-
-}
-
