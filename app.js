@@ -13,6 +13,7 @@ const $previewWrapper = document.querySelector(".preview-wrapper");
 const $captureBtn = document.createElement("div");
 const $video = document.createElement("video");
 const $canvas = document.createElement("canvas");
+const $shopLinks = document.getElementById("shopLinks"); // 링크 요소 가져오기
 
 // 드래그 & 드롭
 ["dragenter", "dragover"].forEach(eventName => {
@@ -35,12 +36,14 @@ $dropArea.addEventListener("drop", e => {
   const files = e.dataTransfer.files;
   if (files.length > 0) {
     $file.files = files;
+    document.getElementById("shopTitle").style.display = "none"; // 제목 숨기기
     showPreview(files[0]);
   }
 });
 
 $file.addEventListener("change", () => {
   if ($file.files.length > 0) {
+    document.getElementById("shopTitle").style.display = "none"; // 제목 숨기기
     showPreview($file.files[0]);
   }
 });
@@ -50,9 +53,13 @@ function showPreview(fileOrBlob) {
   reader.onload = e => {
     $preview.onload = () => {
       $scanLine.style.width = $preview.clientWidth + "px";
+      $scanLine.style.left = $preview.offsetLeft + "px"; // 이미지 왼쪽 기준 맞춤
     };
     $preview.src = e.target.result;
-    $result.textContent = ""; // 예측 텍스트만 초기화
+    $result.textContent = "";
+    $resultText.innerHTML = "";
+    $shopLinks.style.display = "none"; // 새로운 이미지 올릴 때 링크 숨기기
+    document.getElementById("shopTitle").style.display = "none"; // 제목 숨기기
   };
   reader.readAsDataURL(fileOrBlob);
 }
@@ -71,45 +78,68 @@ $btn.addEventListener("click", async () => {
   $loader.style.display = "inline-block";
   $scanLine.style.display = "block";
   $result.textContent = "";
+  $resultText.innerHTML = "";
+  $shopLinks.style.display = "none"; // 로딩 중엔 링크 숨김
+  document.getElementById("shopTitle").style.display = "none"; // 제목 숨기기
 
   try {
     const res = await fetch(API, { method: "POST", body: fd });
     const data = await res.json();
-    console.log("서버 응답:", data); // ✅ 디버그용 로그
     if (!res.ok) throw new Error(data.error || "요청 실패");
 
-    // 예측 결과 출력
     if (data.predictions?.length) {
-      $result.textContent =
-        "Top Predictions:\n" +
-        data.predictions
-          .map((p, i) => `${i + 1}. ${p.label} (Score: ${(p.score * 100).toFixed(2)}%)`)
-          .join("\n");
-
-      // ✅ 그래프 오류로 전체 중단 방지
-      try {
-        drawChart(data.predictions);
-      } catch (err) {
-        console.warn("그래프 그리기 중 오류:", err);
-      }
+      let text = "Top Predictions:\n";
+      data.predictions.forEach((p, i) => {
+        text += `${i + 1}. Label: ${p.label} (Score: ${(p.score * 100).toFixed(2)}%)\n`;
+      });
+      $result.textContent = text;
     } else if (data.error) {
       $result.textContent = "백엔드 에러: " + data.error;
     } else {
       $result.textContent = "예측 결과를 받지 못했습니다.";
     }
 
-    // ✅ 세탁정보 출력 (필드 유무와 상관없이 표시)
-    if (data.wash_method || data.dry_method || data.special_note || data.ko_name) {
+    if (data.ko_name) {
       $resultText.innerHTML = `
-        <h3>${data.ko_name || ''} (${data.predicted_fabric || ''})</h3>
-        <p>🧺 세탁법: ${data.wash_method || '정보 없음'}</p>
-        <p>🌬️ 건조법: ${data.dry_method || '정보 없음'}</p>
-        <p>⚠️ 주의사항: ${data.special_note || '정보 없음'}</p>
+        <h3>${data.ko_name} (${data.predicted_fabric})</h3>
+        <p>🧺 세탁법: ${data.wash_method}</p>
+        <p>🌬️ 건조법: ${data.dry_method}</p>
+        <p>⚠️ 주의사항: ${data.special_note}</p>
       `;
-    } else {
-      $resultText.innerHTML = "";
-    }
 
+      // 🔗 예측된 재질명으로 쇼핑몰 링크 생성
+      const fabricName = data.ko_name || data.predicted_fabric;
+      const query = encodeURIComponent(fabricName);
+
+      const shopLinks = [
+        {
+          name: "네이버 쇼핑",
+          url: `https://search.shopping.naver.com/search/all?query=${query}`,
+          img: "./images/1.jpg"
+        },
+        {
+          name: "무신사",
+          url: `https://www.musinsa.com/search/musinsa/integration?keyword=${query}`,
+          img: "./images/2.jpg"
+        },
+        {
+          name: "스파오",
+          url: `https://www.spao.com/product/search.html?keyword=${query}`,
+          img: "./images/3.jpg"
+        }
+      ];
+
+      $shopLinks.innerHTML = shopLinks
+        .map(link => `
+          <a href="${link.url}" target="_blank" class="shop-link">
+            <img src="${link.img}" alt="${link.name} 로고">
+          </a>
+        `)
+        .join("");
+
+      $shopLinks.style.display = "flex";
+      document.getElementById("shopTitle").style.display = "block"; // AI 추천 표시
+    }
   } catch (e) {
     $result.textContent = "에러: " + e.message;
     $resultText.innerText = "에러: " + e.message;
@@ -136,6 +166,7 @@ $cameraBtn.addEventListener("click", async () => {
     $previewWrapper.innerHTML = "";
     $previewWrapper.appendChild($video);
 
+    // 비디오 메타데이터 로드 완료 대기
     await new Promise(resolve => {
       $video.onloadedmetadata = () => {
         $video.play();
@@ -147,6 +178,7 @@ $cameraBtn.addEventListener("click", async () => {
     $previewWrapper.appendChild($captureBtn);
 
     $captureBtn.addEventListener("click", async () => {
+      // video 크기 로드 후 캡처
       $canvas.width = $video.videoWidth;
       $canvas.height = $video.videoHeight;
       $canvas.getContext("2d").drawImage($video, 0, 0);
@@ -156,10 +188,12 @@ $cameraBtn.addEventListener("click", async () => {
       // 스트림 종료
       stream.getTracks().forEach(track => track.stop());
 
+      // 미리보기 표시
       $preview.src = URL.createObjectURL(blob);
       $previewWrapper.innerHTML = "";
       $previewWrapper.appendChild($preview);
 
+      // 스캔라인 복원
       $scanLine.className = "scan-line";
       $scanLine.id = "scan-line";
       $previewWrapper.appendChild($scanLine);
@@ -175,71 +209,14 @@ $cameraBtn.addEventListener("click", async () => {
   }
 });
 
-// 서버 ping
+// 5분마다 서버에 ping 보내기
 setInterval(async () => {
   try {
     const res = await fetch("https://backend-6i2t.onrender.com/ping");
-    if (res.ok) console.log("서버 ping 성공");
+    if (res.ok) {
+      console.log("서버 ping 성공");
+    }
   } catch (err) {
     console.warn("서버 ping 실패:", err);
   }
-}, 5 * 60 * 1000);
-
-// ===== 그래프 시각화 =====
-let resultChart = null;
-function drawChart(predictions) {
-  const canvas = document.getElementById('resultChart');
-  if (!canvas) {
-    console.warn("resultChart 캔버스를 찾을 수 없습니다.");
-    return;
-  }
-  const ctx = canvas.getContext('2d');
-  if (!ctx) {
-    console.warn("canvas context를 가져오지 못했습니다.");
-    return;
-  }
-  if (!predictions?.length) {
-    console.warn("예측 결과가 없습니다.");
-    return;
-  }
-
-  if (resultChart) resultChart.destroy();
-
-  const labels = predictions.map(p => p.label);
-  const data = predictions.map(p => (p.score ? (p.score * 100).toFixed(1) : 0));
-
-  resultChart = new Chart(ctx, {
-    type: 'bar',
-    data: {
-      labels,
-      datasets: [{
-        label: '예측 확률',
-        data,
-        backgroundColor: [
-          'rgba(65,105,225,0.7)',
-          'rgba(100,149,237,0.7)',
-          'rgba(135,206,250,0.7)'
-        ],
-        borderColor: ['royalblue', 'cornflowerblue', 'skyblue'],
-        borderWidth: 2,
-        borderRadius: 6
-      }]
-    },
-    options: {
-      indexAxis: 'y',
-      responsive: true,
-      plugins: {
-        legend: { display: false },
-        tooltip: {
-          callbacks: {
-            label: context => `${context.parsed.x}%`
-          }
-        }
-      },
-      scales: {
-        x: { display: false, grid: { drawTicks: false, drawBorder: false, drawOnChartArea: false } },
-        y: { ticks: { font: { size: 14 } }, grid: { drawTicks: false, drawBorder: false } }
-      }
-    }
-  });
-}
+}, 5 * 60 * 1000); // 5분 = 300,000 ms
