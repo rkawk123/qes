@@ -13,7 +13,12 @@ const $previewWrapper = document.querySelector(".preview-wrapper");
 const $captureBtn = document.createElement("div");
 const $video = document.createElement("video");
 const $canvas = document.createElement("canvas");
-const $shopLinks = document.getElementById("shopLinks"); // 링크 요소 가져오기
+const $shopLinks = document.getElementById("shopLinks");
+
+// 새로 추가된 버튼
+const $actionButtons = document.getElementById("actionButtons");
+const $washBtn = document.getElementById("washBtn");
+const $shopBtn = document.getElementById("shopBtn");
 
 // 드래그 & 드롭
 ["dragenter", "dragover"].forEach(eventName => {
@@ -36,14 +41,14 @@ $dropArea.addEventListener("drop", e => {
   const files = e.dataTransfer.files;
   if (files.length > 0) {
     $file.files = files;
-    document.getElementById("shopTitle").style.display = "none"; // 제목 숨기기
+    document.getElementById("shopTitle").style.display = "none";
     showPreview(files[0]);
   }
 });
 
 $file.addEventListener("change", () => {
   if ($file.files.length > 0) {
-    document.getElementById("shopTitle").style.display = "none"; // 제목 숨기기
+    document.getElementById("shopTitle").style.display = "none";
     showPreview($file.files[0]);
   }
 });
@@ -53,13 +58,14 @@ function showPreview(fileOrBlob) {
   reader.onload = e => {
     $preview.onload = () => {
       $scanLine.style.width = $preview.clientWidth + "px";
-      $scanLine.style.left = $preview.offsetLeft + "px"; // 이미지 왼쪽 기준 맞춤
+      $scanLine.style.left = $preview.offsetLeft + "px";
     };
     $preview.src = e.target.result;
     $result.textContent = "";
     $resultText.innerHTML = "";
-    $shopLinks.style.display = "none"; // 새로운 이미지 올릴 때 링크 숨기기
-    document.getElementById("shopTitle").style.display = "none"; // 제목 숨기기
+    $shopLinks.style.display = "none";
+    $actionButtons.style.display = "none";
+    document.getElementById("shopTitle").style.display = "none";
   };
   reader.readAsDataURL(fileOrBlob);
 }
@@ -79,14 +85,15 @@ $btn.addEventListener("click", async () => {
   $scanLine.style.display = "block";
   $result.textContent = "";
   $resultText.innerHTML = "";
-  $shopLinks.style.display = "none"; // 로딩 중엔 링크 숨김
-  document.getElementById("shopTitle").style.display = "none"; // 제목 숨기기
+  $shopLinks.style.display = "none";
+  $actionButtons.style.display = "none";
 
   try {
     const res = await fetch(API, { method: "POST", body: fd });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || "요청 실패");
 
+    // 1️⃣ 원단 이름 + 확률만 표시
     if (data.predictions?.length) {
       let text = "Top Predictions:\n";
       data.predictions.forEach((p, i) => {
@@ -99,53 +106,51 @@ $btn.addEventListener("click", async () => {
       $result.textContent = "예측 결과를 받지 못했습니다.";
     }
 
-    if (data.ko_name) {
-      $resultText.innerHTML = `
-        <h3>${data.ko_name} (${data.predicted_fabric})</h3>
-        <p>🧺 세탁법: ${data.wash_method}</p>
-        <p>🌬️ 건조법: ${data.dry_method}</p>
-        <p>⚠️ 주의사항: ${data.special_note}</p>
-      `;
+    // 세탁정보 + 쇼핑몰 링크를 위한 데이터 임시 저장
+    $washBtn._data = data;
+    $shopBtn._data = data;
 
-      // 🔗 예측된 재질명으로 쇼핑몰 링크 생성
-      const fabricName = data.ko_name || data.predicted_fabric;
-      const query = encodeURIComponent(fabricName);
-
-      const shopLinks = [
-        {
-          name: "네이버 쇼핑",
-          url: `https://search.shopping.naver.com/search/all?query=${query}`,
-          img: "./images/1.jpg"
-        },
-        {
-          name: "무신사",
-          url: `https://www.musinsa.com/search/musinsa/integration?keyword=${query}`,
-          img: "./images/2.jpg"
-        },
-        {
-          name: "스파오",
-          url: `https://www.spao.com/product/search.html?keyword=${query}`,
-          img: "./images/3.jpg"
-        }
-      ];
-
-      $shopLinks.innerHTML = shopLinks
-        .map(link => `
-          <a href="${link.url}" target="_blank" class="shop-link">
-            <img src="${link.img}" alt="${link.name} 로고">
-          </a>
-        `)
-        .join("");
-
-      $shopLinks.style.display = "flex";
-      document.getElementById("shopTitle").style.display = "block"; // AI 추천 표시
-    }
+    // 버튼 보이기
+    $actionButtons.style.display = "flex";
   } catch (e) {
     $result.textContent = "에러: " + e.message;
-    $resultText.innerText = "에러: " + e.message;
   } finally {
     $loader.style.display = "none";
     $scanLine.style.display = "none";
+  }
+});
+
+// 2️⃣ 세탁 정보 버튼 클릭
+$washBtn.addEventListener("click", () => {
+  const data = $washBtn._data;
+  if (data?.ko_name) {
+    $resultText.innerHTML = `
+      <h3>${data.ko_name} (${data.predicted_fabric})</h3>
+      <p>🧺 세탁법: ${data.wash_method}</p>
+      <p>🌬️ 건조법: ${data.dry_method}</p>
+      <p>⚠️ 주의사항: ${data.special_note}</p>
+    `;
+  }
+});
+
+// 3️⃣ 쇼핑몰 추천 버튼 클릭
+$shopBtn.addEventListener("click", () => {
+  const data = $shopBtn._data;
+  if (data?.ko_name) {
+    const fabricName = data.ko_name || data.predicted_fabric;
+    const query = encodeURIComponent(fabricName);
+
+    const shopLinks = [
+      { name: "네이버 쇼핑", url: `https://search.shopping.naver.com/search/all?query=${query}`, img: "./images/1.jpg" },
+      { name: "무신사", url: `https://www.musinsa.com/search/musinsa/integration?keyword=${query}`, img: "./images/2.jpg" },
+      { name: "스파오", url: `https://www.spao.com/product/search.html?keyword=${query}`, img: "./images/3.jpg" }
+    ];
+
+    $shopLinks.innerHTML = shopLinks
+      .map(link => `<a href="${link.url}" target="_blank" class="shop-link"><img src="${link.img}" alt="${link.name} 로고"></a>`)
+      .join("");
+
+    $shopLinks.style.display = "flex";
   }
 });
 
@@ -166,7 +171,6 @@ $cameraBtn.addEventListener("click", async () => {
     $previewWrapper.innerHTML = "";
     $previewWrapper.appendChild($video);
 
-    // 비디오 메타데이터 로드 완료 대기
     await new Promise(resolve => {
       $video.onloadedmetadata = () => {
         $video.play();
@@ -178,27 +182,22 @@ $cameraBtn.addEventListener("click", async () => {
     $previewWrapper.appendChild($captureBtn);
 
     $captureBtn.addEventListener("click", async () => {
-      // video 크기 로드 후 캡처
       $canvas.width = $video.videoWidth;
       $canvas.height = $video.videoHeight;
       $canvas.getContext("2d").drawImage($video, 0, 0);
 
       const blob = await new Promise(resolve => $canvas.toBlob(resolve, "image/png"));
 
-      // 스트림 종료
       stream.getTracks().forEach(track => track.stop());
 
-      // 미리보기 표시
       $preview.src = URL.createObjectURL(blob);
       $previewWrapper.innerHTML = "";
       $previewWrapper.appendChild($preview);
 
-      // 스캔라인 복원
       $scanLine.className = "scan-line";
       $scanLine.id = "scan-line";
       $previewWrapper.appendChild($scanLine);
 
-      // 바로 예측 실행
       $file._cameraBlob = blob;
       $loader.style.display = "inline-block";
       $scanLine.style.display = "block";
@@ -209,14 +208,12 @@ $cameraBtn.addEventListener("click", async () => {
   }
 });
 
-// 5분마다 서버에 ping 보내기
+// 5분마다 서버에 ping
 setInterval(async () => {
   try {
     const res = await fetch("https://backend-6i2t.onrender.com/ping");
-    if (res.ok) {
-      console.log("서버 ping 성공");
-    }
+    if (res.ok) console.log("서버 ping 성공");
   } catch (err) {
     console.warn("서버 ping 실패:", err);
   }
-}, 5 * 60 * 1000); // 5분 = 300,000 ms
+}, 5 * 60 * 1000);
