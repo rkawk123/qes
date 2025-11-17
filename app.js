@@ -328,36 +328,28 @@ $btn.addEventListener("click", async () => {
         <p>⚠️ 주의사항: ${data.special_note}</p>
       `;
 
-      // 🔗 예측된 재질명으로 쇼핑몰 링크 생성
+      // 🔗 클래스별 이미지 6개를 3개 링크에 2개씩 배치
       const fabricName = data.ko_name || data.predicted_fabric;
-      const query = encodeURIComponent(fabricName);
-
-      const shopLinks = [
-        {
-          name: "네이버 쇼핑",
-          url: `https://search.shopping.naver.com/search/all?query=${query}`,
-          img: "./images/1.jpg"
-        },
-        {
-          name: "무신사",
-          url: `https://www.musinsa.com/search/musinsa/integration?keyword=${query}`,
-          img: "./images/2.jpg"
-        },
-        {
-          name: "스파오",
-          url: `https://www.spao.com/product/search.html?keyword=${query}`,
-          img: "./images/3.jpg"
-        }
+      const classFolder = fabricName.replace(/\s+/g, "_"); // 공백은 _로
+      const shopLinksData = [
+        { name: "네이버 쇼핑", url: `https://search.shopping.naver.com/search/all?query=${encodeURIComponent(fabricName)}` },
+        { name: "무신사", url: `https://www.musinsa.com/search/musinsa/integration?keyword=${encodeURIComponent(fabricName)}` },
+        { name: "스파오", url: `https://www.spao.com/product/search.html?keyword=${encodeURIComponent(fabricName)}` }
       ];
 
-      $shopLinks.innerHTML = shopLinks
-        .map(link => `
-          <a href="${link.url}" target="_blank" class="shop-link">
-            <img src="${link.img}" alt="${link.name} 로고">
-          </a>
-        `)
-        .join("");
+      let html = "";
+      shopLinksData.forEach((link, idx) => {
+        for (let i = 1; i <= 2; i++) {
+          const imgPath = `./images/${classFolder}/${idx * 2 + i}.jpg`; // 각 링크마다 2개씩
+          html += `
+            <a href="${link.url}" target="_blank" class="shop-link">
+              <img src="${imgPath}" alt="${link.name} 로고">
+            </a>
+          `;
+        }
+      });
 
+      $shopLinks.innerHTML = html;
       $shopLinks.style.display = "flex";
       document.getElementById("shopTitle").style.display = "block"; // AI 추천 표시
     }
