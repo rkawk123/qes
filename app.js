@@ -329,17 +329,17 @@ $btn.addEventListener("click", async () => {
       `;
 
       // 🔗 클래스 폴더 안 이미지 자동 불러오기 (PNG, 1~6)
-      const classFolder = data.predicted_fabric; // 클래스명
+      const classFolder = data.predicted_fabric; // 폴더명 (영문)
       const images = [];
       for (let i = 1; i <= 6; i++) {
-        images.push(`./images/${classFolder}/${i}.png`); // PNG로 고정, 순서 중요
+        images.push(`./images/${classFolder}/${i}.png`); // PNG, 순서 중요
       }
 
-      // 링크는 한글 검색어 그대로
+      // 링크는 한글 검색어 사용
       const links = [
-        `https://search.shopping.naver.com/search/all?query=${encodeURIComponent(classFolder)}`,
-        `https://www.musinsa.com/search/musinsa/integration?keyword=${encodeURIComponent(classFolder)}`,
-        `https://www.spao.com/product/search.html?keyword=${encodeURIComponent(classFolder)}`
+        `https://search.shopping.naver.com/search/all?query=${encodeURIComponent(data.ko_name)}`,
+        `https://www.musinsa.com/search/musinsa/integration?keyword=${encodeURIComponent(data.ko_name)}`,
+        `https://www.spao.com/product/search.html?keyword=${encodeURIComponent(data.ko_name)}`
       ];
 
       $shopLinks.innerHTML = "";
@@ -390,7 +390,6 @@ $cameraBtn.addEventListener("click", async () => {
     $previewWrapper.innerHTML = "";
     $previewWrapper.appendChild($video);
 
-    // 비디오 메타데이터 로드 완료 대기
     await new Promise(resolve => {
       $video.onloadedmetadata = () => {
         $video.play();
@@ -402,27 +401,22 @@ $cameraBtn.addEventListener("click", async () => {
     $previewWrapper.appendChild($captureBtn);
 
     $captureBtn.addEventListener("click", async () => {
-      // video 크기 로드 후 캡처
       $canvas.width = $video.videoWidth;
       $canvas.height = $video.videoHeight;
       $canvas.getContext("2d").drawImage($video, 0, 0);
 
       const blob = await new Promise(resolve => $canvas.toBlob(resolve, "image/png"));
 
-      // 스트림 종료
       stream.getTracks().forEach(track => track.stop());
 
-      // 미리보기 표시
       $preview.src = URL.createObjectURL(blob);
       $previewWrapper.innerHTML = "";
       $previewWrapper.appendChild($preview);
 
-      // 스캔라인 복원
       $scanLine.className = "scan-line";
       $scanLine.id = "scan-line";
       $previewWrapper.appendChild($scanLine);
 
-      // 바로 예측 실행
       $file._cameraBlob = blob;
       $loader.style.display = "inline-block";
       $scanLine.style.display = "block";
