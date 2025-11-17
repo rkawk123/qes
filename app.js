@@ -337,12 +337,10 @@ $btn.addEventListener("click", async () => {
         `https://www.spao.com/product/search.html?keyword=${encodeURIComponent(data.ko_name)}`
       ];
 
+      // 기존 shopLinks 초기화
       $shopLinks.innerHTML = "";
-      $shopLinks.style.display = "flex";
-      $shopLinks.style.overflow = "hidden";
-      $shopLinks.style.position = "relative";
-
       const slideWrapper = document.createElement("div");
+      slideWrapper.className = "slide-wrapper";
       slideWrapper.style.display = "flex";
       slideWrapper.style.transition = "transform 0.5s ease";
       $shopLinks.appendChild(slideWrapper);
@@ -364,18 +362,21 @@ $btn.addEventListener("click", async () => {
         shopLinkElements.push(linkEl);
       });
 
+      $shopLinks.style.display = "flex";
       document.getElementById("shopTitle").style.display = "block";
 
-      // 슬라이드 애니메이션
+      // 슬라이드 JS (transform으로 부드럽게)
       let currentIndex = 0;
+      const slideCount = shopLinkElements.length;
+      const slideWidth = shopLinkElements[0].clientWidth;
+
       function showSlide(index) {
-        const offset = -index * 100;
-        slideWrapper.style.transform = `translateX(${offset}%)`;
+        slideWrapper.style.transform = `translateX(${-index * slideWidth}px)`;
       }
 
       showSlide(currentIndex);
       setInterval(() => {
-        currentIndex = (currentIndex + 1) % shopLinkElements.length;
+        currentIndex = (currentIndex + 1) % slideCount;
         showSlide(currentIndex);
       }, 5000);
     }
@@ -442,7 +443,7 @@ $cameraBtn.addEventListener("click", async () => {
   }
 });
 
-// 5분마다 서버에 ping
+// 5분마다 서버 ping
 setInterval(async () => {
   try {
     const res = await fetch("https://backend-6i2t.onrender.com/ping");
