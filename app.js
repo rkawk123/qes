@@ -244,7 +244,6 @@ const $shopLinks = document.getElementById("shopLinks");
     $dropArea.classList.add("highlight");
   });
 });
-
 ["dragleave", "drop"].forEach(eventName => {
   $dropArea.addEventListener(eventName, e => {
     e.preventDefault();
@@ -252,7 +251,6 @@ const $shopLinks = document.getElementById("shopLinks");
     $dropArea.classList.remove("highlight");
   });
 });
-
 $dropArea.addEventListener("drop", e => {
   const files = e.dataTransfer.files;
   if (files.length > 0) {
@@ -261,7 +259,6 @@ $dropArea.addEventListener("drop", e => {
     showPreview(files[0]);
   }
 });
-
 $file.addEventListener("change", () => {
   if ($file.files.length > 0) {
     document.getElementById("shopTitle").style.display = "none";
@@ -328,8 +325,8 @@ $btn.addEventListener("click", async () => {
         <p>⚠️ 주의사항: ${data.special_note}</p>
       `;
 
-      // 🔗 파일명 방식 (images/클래스명1.png~6.png)
-      const classFolder = data.predicted_fabric;
+      // 🔗 파일명 방식 적용 (소문자로 변환)
+      const classFolder = data.predicted_fabric.toLowerCase();
       const images = [];
       for (let i = 1; i <= 6; i++) {
         images.push(`./images/${classFolder}${i}.png`);
@@ -425,7 +422,7 @@ $cameraBtn.addEventListener("click", async () => {
   }
 });
 
-// 5분마다 서버에 ping 보내기
+// 5분마다 서버에 ping
 setInterval(async () => {
   try {
     const res = await fetch("https://backend-6i2t.onrender.com/ping");
