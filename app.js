@@ -234,7 +234,15 @@ const $previewWrapper = document.querySelector(".preview-wrapper");
 const $captureBtn = document.createElement("div");
 const $video = document.createElement("video");
 const $canvas = document.createElement("canvas");
-const $shopLinks = document.getElementById("shopLinks");
+
+// 슬라이드 관련
+const $shopSlideContainer = document.getElementById("shopSlideContainer");
+const $slideWrapper = document.getElementById("slideWrapper");
+const $prevBtn = document.getElementById("prevBtn");
+const $nextBtn = document.getElementById("nextBtn");
+
+let slideIndex = 0;
+let slideCount = 0;
 
 // 드래그 & 드롭
 ["dragenter", "dragover"].forEach(eventName => {
@@ -276,7 +284,7 @@ function showPreview(fileOrBlob) {
     $preview.src = e.target.result;
     $result.textContent = "";
     $resultText.innerHTML = "";
-    $shopLinks.style.display = "none";
+    $shopSlideContainer.style.display = "none";
     document.getElementById("shopTitle").style.display = "none";
   };
   reader.readAsDataURL(fileOrBlob);
@@ -297,7 +305,7 @@ $btn.addEventListener("click", async () => {
   $scanLine.style.display = "block";
   $result.textContent = "";
   $resultText.innerHTML = "";
-  $shopLinks.style.display = "none";
+  $shopSlideContainer.style.display = "none";
   document.getElementById("shopTitle").style.display = "none";
 
   try {
@@ -305,6 +313,7 @@ $btn.addEventListener("click", async () => {
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || "요청 실패");
 
+    // 결과 텍스트
     if (data.predictions?.length) {
       let text = "Top Predictions:\n";
       data.predictions.forEach((p, i) => {
@@ -325,8 +334,8 @@ $btn.addEventListener("click", async () => {
         <p>⚠️ 주의사항: ${data.special_note}</p>
       `;
 
-      // 🔗 파일명 방식 적용 (소문자로 변환)
-      const classFolder = data.predicted_fabric.toLowerCase();
+      // 이미지 슬라이드 생성
+      const classFolder = data.predicted_fabric;
       const images = [];
       for (let i = 1; i <= 6; i++) {
         images.push(`./images/${classFolder}${i}.png`);
@@ -338,25 +347,31 @@ $btn.addEventListener("click", async () => {
         `https://www.spao.com/product/search.html?keyword=${encodeURIComponent(data.ko_name)}`
       ];
 
-      $shopLinks.innerHTML = "";
+      $slideWrapper.innerHTML = "";
       for (let i = 0; i < links.length; i++) {
-        const linkEl = document.createElement("a");
-        linkEl.href = links[i];
-        linkEl.target = "_blank";
-        linkEl.className = "shop-link";
+        const a = document.createElement("a");
+        a.href = links[i];
+        a.target = "_blank";
+        a.className = "slide-item";
 
-        const imgIdx = i * 2;
-        [images[imgIdx], images[imgIdx + 1]].forEach(src => {
-          const imgEl = document.createElement("img");
-          imgEl.src = src;
-          imgEl.alt = classFolder;
-          linkEl.appendChild(imgEl);
-        });
+        const img1 = document.createElement("img");
+        img1.src = images[i * 2];
+        img1.alt = classFolder;
+        a.appendChild(img1);
 
-        $shopLinks.appendChild(linkEl);
+        const img2 = document.createElement("img");
+        img2.src = images[i * 2 + 1];
+        img2.alt = classFolder;
+        a.appendChild(img2);
+
+        $slideWrapper.appendChild(a);
       }
 
-      $shopLinks.style.display = "flex";
+      slideIndex = 0;
+      slideCount = $slideWrapper.children.length;
+      updateSlide();
+
+      $shopSlideContainer.style.display = "flex";
       document.getElementById("shopTitle").style.display = "block";
     }
   } catch (e) {
@@ -367,6 +382,30 @@ $btn.addEventListener("click", async () => {
     $scanLine.style.display = "none";
   }
 });
+
+// 슬라이드 컨트롤
+function updateSlide() {
+  const offset = -slideIndex * 100;
+  $slideWrapper.style.transform = `translateX(${offset}%)`;
+}
+
+$prevBtn.addEventListener("click", () => {
+  slideIndex = (slideIndex - 1 + slideCount) % slideCount;
+  updateSlide();
+});
+
+$nextBtn.addEventListener("click", () => {
+  slideIndex = (slideIndex + 1) % slideCount;
+  updateSlide();
+});
+
+// 자동 슬라이드 (5초)
+setInterval(() => {
+  if (slideCount > 0) {
+    slideIndex = (slideIndex + 1) % slideCount;
+    updateSlide();
+  }
+}, 5000);
 
 // 카메라 촬영
 $cameraBtn.addEventListener("click", async () => {
@@ -422,7 +461,7 @@ $cameraBtn.addEventListener("click", async () => {
   }
 });
 
-// 5분마다 서버에 ping
+// 서버 ping
 setInterval(async () => {
   try {
     const res = await fetch("https://backend-6i2t.onrender.com/ping");
