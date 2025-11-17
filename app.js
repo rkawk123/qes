@@ -250,18 +250,20 @@ function showPreview(fileOrBlob) {
   reader.onload = e => {
     $preview.onload = () => {
       $scanLine.style.width = $preview.clientWidth + "px";
-      $scanLine.style.left = $preview.offsetLeft + "px"; // 이미지 왼쪽 기준 맞춤
+      $scanLine.style.left = $preview.offsetLeft + "px"; 
     };
     $preview.src = e.target.result;
-    $result.textContent = "";
-    $resultText.innerHTML = "";
+
+    // 미리보기 표시 시점에서는 결과 초기화 제거
+    // $result.textContent = "";
+    // $resultText.innerHTML = "";
+    
     $shopLinks.style.display = "none"; // 새로운 이미지 올릴 때 링크 숨기기
-    document.getElementById("shopTitle").style.display = "none"; // 제목 숨기기
+    document.getElementById("shopTitle").style.display = "none"; 
   };
   reader.readAsDataURL(fileOrBlob);
 }
 
-// 서버 업로드 및 예측 (지금은 cotton 고정)
 $btn.addEventListener("click", async () => {
   let uploadFile = $file.files[0] || $file._cameraBlob;
   if (!uploadFile) {
@@ -269,23 +271,22 @@ $btn.addEventListener("click", async () => {
     return;
   }
 
-  showPreview(uploadFile);
+  // showPreview(uploadFile); ← 제거
 
   $loader.style.display = "inline-block";
   $scanLine.style.display = "block";
+
+  // 예측 시작 전 결과만 초기화
   $result.textContent = "";
   $resultText.innerHTML = "";
-  $shopLinks.style.display = "none"; // 로딩 중엔 링크 숨김
-  document.getElementById("shopTitle").style.display = "none"; // 제목 숨기기
 
-  // cotton으로 고정
+  // 예측 실행 (현재 cotton 고정)
   const predictedFabric = "cotton";
   $resultText.innerHTML = `<h3>${predictedFabric}</h3>`;
   
-  // 6장 이미지 랜덤 순서
-  const images = [1,2,3,4,5,6].sort(() => Math.random() - 0.5).map(i => `./images/${predictedFabric[0]}${i}.png`);
+  const images = [1,2,3,4,5,6].sort(() => Math.random() - 0.5)
+                  .map(i => `./images/${predictedFabric[0]}${i}.png`);
 
-  // 3개의 쇼핑몰 링크
   const shopLinksArr = [
     { name: "네이버 쇼핑", url: `https://search.shopping.naver.com/search/all?query=${predictedFabric}` },
     { name: "무신사", url: `https://www.musinsa.com/search/musinsa/integration?keyword=${predictedFabric}` },
@@ -294,7 +295,7 @@ $btn.addEventListener("click", async () => {
 
   $shopLinks.innerHTML = "";
   images.forEach((img, idx) => {
-    const linkIdx = Math.floor(idx / 2); // 2장씩 URL 부여
+    const linkIdx = Math.floor(idx / 2);
     const a = document.createElement("a");
     a.href = shopLinksArr[linkIdx].url;
     a.target = "_blank";
@@ -306,19 +307,17 @@ $btn.addEventListener("click", async () => {
     $shopLinks.appendChild(a);
   });
 
-  // 슬라이더 스타일
   $shopLinks.style.display = "flex";
   $shopLinks.style.overflow = "hidden";
   $shopLinks.style.width = "100%";
   $shopLinks.style.transition = "transform 0.5s linear";
 
-  // 무한 슬라이드
   let position = 0;
-  const slideWidth = 160; // 이미지+margin
+  const slideWidth = 160;
   const totalSlides = images.length;
 
   setInterval(() => {
-    position += slideWidth; // 한 장씩 이동
+    position += slideWidth;
     if (position >= slideWidth * totalSlides) position = 0;
     $shopLinks.style.transform = `translateX(-${position}px)`;
   }, 2000);
