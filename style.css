@@ -311,7 +311,38 @@ h1 {
 .capture-circle:hover {
   transform: translateX(-50%) scale(1.1);
 }
+/* 슬라이드 래퍼 */
+#shopLinks {
+  overflow: hidden;        /* 슬라이드 영역 밖 이미지 숨김 */
+  width: 100%;
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  position: relative;
+}
 
+/* 이미지들을 가로로 배치하고 이동 */
+.slide-wrapper {
+  display: flex;
+  transition: transform 0.8s ease-in-out; /* 부드러운 슬라이드 */
+}
+
+/* 링크 이미지 높이 고정, 비율 유지 */
+.slide-wrapper img {
+  height: 150px;           /* 원하는 고정 높이 */
+  width: auto;             /* 비율 유지 */
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  margin-right: 15px;      /* 이미지 간 간격 */
+  flex-shrink: 0;          /* 줄어들지 않게 */
+  object-fit: contain;     /* 비율 유지하며 이미지 맞춤 */
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.slide-wrapper img:hover {
+  transform: scale(1.05);
+  box-shadow: 0 6px 12px rgba(0,0,0,0.2);
+}
 /* 모바일 반응형 *
 @media (max-width: 480px) {
   header {
