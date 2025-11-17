@@ -212,59 +212,47 @@ const $video = document.createElement("video");
 const $canvas = document.createElement("canvas");
 const $shopLinks = document.getElementById("shopLinks");
 
-let currentSlide = 0;
+// 슬라이드 컨트롤
+const $prev = document.createElement("div");
+const $next = document.createElement("div");
+let currentIndex = 0;
 let slideInterval;
+let images = [];
 
-function createNavButtons() {
-  const prevBtn = document.createElement("button");
-  const nextBtn = document.createElement("button");
-  prevBtn.innerText = "<";
-  nextBtn.innerText = ">";
-  prevBtn.style.marginRight = "10px";
-  nextBtn.style.marginLeft = "10px";
-  prevBtn.className = "slide-nav";
-  nextBtn.className = "slide-nav";
-  $shopLinks.parentElement.appendChild(prevBtn);
-  $shopLinks.parentElement.appendChild(nextBtn);
-
-  prevBtn.addEventListener("click", () => {
-    showSlide(currentSlide - 1);
-  });
-  nextBtn.addEventListener("click", () => {
-    showSlide(currentSlide + 1);
-  });
-}
+// 화살표 생성
+$prev.className = "arrow arrow-left";
+$prev.innerHTML = "&#10094;";
+$next.className = "arrow arrow-right";
+$next.innerHTML = "&#10095;";
+$previewWrapper.appendChild($prev);
+$previewWrapper.appendChild($next);
 
 // 드래그 & 드롭
-["dragenter", "dragover"].forEach(eventName => {
-  $dropArea.addEventListener(eventName, e => {
-    e.preventDefault();
-    e.stopPropagation();
-    $dropArea.classList.add("highlight");
-  });
-});
-["dragleave", "drop"].forEach(eventName => {
-  $dropArea.addEventListener(eventName, e => {
-    e.preventDefault();
-    e.stopPropagation();
-    $dropArea.classList.remove("highlight");
-  });
-});
+["dragenter", "dragover"].forEach(eName => $dropArea.addEventListener(eName, e => {
+  e.preventDefault(); e.stopPropagation();
+  $dropArea.classList.add("highlight");
+}));
+["dragleave", "drop"].forEach(eName => $dropArea.addEventListener(eName, e => {
+  e.preventDefault(); e.stopPropagation();
+  $dropArea.classList.remove("highlight");
+}));
 $dropArea.addEventListener("drop", e => {
   const files = e.dataTransfer.files;
-  if (files.length > 0) {
+  if (files.length) {
     $file.files = files;
     document.getElementById("shopTitle").style.display = "none";
     showPreview(files[0]);
   }
 });
+
 $file.addEventListener("change", () => {
-  if ($file.files.length > 0) {
+  if ($file.files.length) {
     document.getElementById("shopTitle").style.display = "none";
     showPreview($file.files[0]);
   }
 });
 
+// 미리보기
 function showPreview(fileOrBlob) {
   const reader = new FileReader();
   reader.onload = e => {
@@ -274,75 +262,70 @@ function showPreview(fileOrBlob) {
     };
     $preview.src = e.target.result;
     $shopLinks.style.display = "none";
-    document.getElementById("shopTitle").style.display = "none";
   };
   reader.readAsDataURL(fileOrBlob);
 }
 
-// 슬라이드 함수
-function showSlide(idx) {
-  const slides = Array.from($shopLinks.querySelectorAll("img"));
-  if (!slides.length) return;
-
-  currentSlide = (idx + slides.length) % slides.length;
-  slides.forEach((img, i) => {
-    img.style.display = i === currentSlide ? "block" : "none";
-  });
+// 슬라이드 업데이트
+function updateSlide() {
+  $shopLinks.style.transform = `translateX(${-currentIndex * 100}%)`;
 }
 
-// 서버 업로드 및 예측
+// 자동 슬라이드
+function startAutoSlide() {
+  clearInterval(slideInterval);
+  slideInterval = setInterval(nextSlide, 5000);
+}
+
+function nextSlide() {
+  currentIndex++;
+  if (currentIndex >= images.length) currentIndex = 0;
+  updateSlide();
+}
+
+function prevSlide() {
+  currentIndex--;
+  if (currentIndex < 0) currentIndex = images.length - 1;
+  updateSlide();
+}
+
+// 화살표 클릭
+$prev.addEventListener("click", () => { prevSlide(); startAutoSlide(); });
+$next.addEventListener("click", () => { nextSlide(); startAutoSlide(); });
+
+// 예측 버튼
 $btn.addEventListener("click", async () => {
   let uploadFile = $file.files[0] || $file._cameraBlob;
-  if (!uploadFile) {
-    alert("이미지를 선택하거나 촬영하세요!");
-    return;
-  }
+  if (!uploadFile) { alert("이미지를 선택하거나 촬영하세요!"); return; }
 
   $loader.style.display = "inline-block";
   $scanLine.style.display = "block";
   $result.textContent = "";
   $resultText.innerHTML = "";
 
+  // 예측 (현재 cotton 고정)
   const predictedFabric = "cotton";
   $resultText.innerHTML = `<h3>${predictedFabric}</h3>`;
 
-  const images = [1,2,3,4,5,6].sort(() => Math.random() - 0.5)
-                  .map(i => `./images/${predictedFabric[0]}${i}.png`);
-
-  const shopLinksArr = [
-    { name: "네이버 쇼핑", url: `https://search.shopping.naver.com/search/all?query=${predictedFabric}` },
-    { name: "무신사", url: `https://www.musinsa.com/search/musinsa/integration?keyword=${predictedFabric}` },
-    { name: "스파오", url: `https://www.spao.com/product/search.html?keyword=${predictedFabric}` }
-  ];
+  images = [1,2,3,4,5,6].sort(() => Math.random()-0.5)
+            .map(i => `./images/${predictedFabric[0]}${i}.png`);
 
   $shopLinks.innerHTML = "";
-  images.forEach((img, idx) => {
-    const linkIdx = Math.floor(idx / 2);
-    const a = document.createElement("a");
-    a.href = shopLinksArr[linkIdx].url;
-    a.target = "_blank";
-    a.className = "shop-slide";
-    const imageEl = document.createElement("img");
-    imageEl.src = img;
-    imageEl.alt = shopLinksArr[linkIdx].name;
-    imageEl.style.width = "300px"; // 사진 크기 일정
-    imageEl.style.height = "300px";
-    a.appendChild(imageEl);
-    $shopLinks.appendChild(a);
+  images.forEach(src => {
+    const img = document.createElement("img");
+    img.src = src;
+    img.style.background = "#fff";      // 흰 배경
+    img.style.objectFit = "contain";    // 비율 유지
+    $shopLinks.appendChild(img);
   });
 
-  showSlide(0);
   $shopLinks.style.display = "flex";
-  $shopLinks.style.justifyContent = "center";
-  $shopLinks.style.alignItems = "center";
+  $shopLinks.style.overflow = "hidden";
+  $shopLinks.style.transition = "transform 0.5s ease";
 
-  // 자동 슬라이드 5초
-  clearInterval(slideInterval);
-  slideInterval = setInterval(() => {
-    showSlide(currentSlide + 1);
-  }, 5000);
-
-  createNavButtons();
+  currentIndex = 0;
+  updateSlide();
+  startAutoSlide();
 
   $loader.style.display = "none";
   $scanLine.style.display = "none";
@@ -351,53 +334,30 @@ $btn.addEventListener("click", async () => {
 // 카메라 촬영
 $cameraBtn.addEventListener("click", async () => {
   try {
-    const stream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: { ideal: "environment" } },
-      audio: false
-    });
-    $video.srcObject = stream;
-    $video.autoplay = true;
-    $video.playsInline = true;
-    $video.width = 300;
-    $video.height = 200;
-    $previewWrapper.innerHTML = "";
-    $previewWrapper.appendChild($video);
-
-    await new Promise(resolve => {
-      $video.onloadedmetadata = () => { $video.play(); resolve(); };
-    });
+    const stream = await navigator.mediaDevices.getUserMedia({ video:{ facingMode:"environment" }, audio:false });
+    $video.srcObject = stream; $video.autoplay = true; $video.playsInline = true;
+    $previewWrapper.innerHTML = ""; $previewWrapper.appendChild($video); $previewWrapper.appendChild($captureBtn);
 
     $captureBtn.className = "capture-circle";
-    $previewWrapper.appendChild($captureBtn);
 
     $captureBtn.addEventListener("click", async () => {
       $canvas.width = $video.videoWidth;
       $canvas.height = $video.videoHeight;
-      $canvas.getContext("2d").drawImage($video, 0, 0);
-      const blob = await new Promise(resolve => $canvas.toBlob(resolve, "image/png"));
-      stream.getTracks().forEach(track => track.stop());
+      $canvas.getContext("2d").drawImage($video,0,0);
+      const blob = await new Promise(resolve => $canvas.toBlob(resolve,"image/png"));
+      stream.getTracks().forEach(t=>t.stop());
       $preview.src = URL.createObjectURL(blob);
-      $previewWrapper.innerHTML = "";
-      $previewWrapper.appendChild($preview);
-      $scanLine.className = "scan-line";
-      $scanLine.id = "scan-line";
-      $previewWrapper.appendChild($scanLine);
+      $previewWrapper.innerHTML = ""; $previewWrapper.appendChild($preview); $previewWrapper.appendChild($scanLine);
       $file._cameraBlob = blob;
-      $loader.style.display = "inline-block";
-      $scanLine.style.display = "block";
+      $loader.style.display = "inline-block"; $scanLine.style.display = "block";
       $btn.click();
     });
-  } catch (err) {
-    alert("카메라를 사용할 수 없습니다: " + err.message);
-  }
+
+  } catch(err) { alert("카메라를 사용할 수 없습니다: " + err.message); }
 });
 
 // 5분마다 서버 ping
-setInterval(async () => {
-  try {
-    const res = await fetch("https://backend-6i2t.onrender.com/ping");
-    if (res.ok) console.log("서버 ping 성공");
-  } catch (err) {
-    console.warn("서버 ping 실패:", err);
-  }
-}, 5 * 60 * 1000);
+setInterval(async ()=>{
+  try { const res = await fetch("https://backend-6i2t.onrender.com/ping"); if(res.ok) console.log("서버 ping 성공"); }
+  catch(err){console.warn("서버 ping 실패:", err);}
+}, 300000);
