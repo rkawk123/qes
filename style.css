@@ -311,6 +311,44 @@ h1 {
 .capture-circle:hover {
   transform: translateX(-50%) scale(1.1);
 }
+.shop-slide-container {
+  position: relative;
+  width: 600px; /* 원하는 크기 */
+  margin: 20px auto; /* 가운데 정렬 */
+  overflow: hidden;
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.slide-wrapper {
+  display: flex;
+  transition: transform 0.5s ease;
+}
+
+.slide-wrapper img {
+  width: 100%;
+  flex-shrink: 0;
+  object-fit: contain; /* 비율 유지 */
+}
+
+.slide-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(0,0,0,0.5);
+  color: #fff;
+  border: none;
+  padding: 10px;
+  cursor: pointer;
+  font-size: 20px;
+  border-radius: 50%;
+  z-index: 10;
+}
+
+.left-btn { left: 10px; }
+.right-btn { right: 10px; }
+
 
 /* 모바일 반응형 *
 @media (max-width: 480px) {
