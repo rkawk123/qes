@@ -325,7 +325,7 @@ $btn.addEventListener("click", async () => {
         <p>⚠️ 주의사항: ${data.special_note}</p>
       `;
 
-      // 🔗 파일명 방식 적용 (소문자로 변환)
+      // 이미지 6장 불러오기
       const classFolder = data.predicted_fabric.toLowerCase();
       const images = [];
       for (let i = 1; i <= 6; i++) {
@@ -341,9 +341,12 @@ $btn.addEventListener("click", async () => {
       $shopLinks.innerHTML = "";
       const shopLinkElements = [];
 
-      for (let i = 0; i < images.length; i++) {
+      // 🔥 한 링크 + 이미지 1장씩
+      for (let i = 0; i < links.length; i++) {
+        if (!images[i]) continue;
+
         const linkEl = document.createElement("a");
-        linkEl.href = `https://search.shopping.naver.com/search/all?query=${encodeURIComponent(data.ko_name)}`;
+        linkEl.href = links[i];
         linkEl.target = "_blank";
         linkEl.className = "shop-link";
 
@@ -354,20 +357,25 @@ $btn.addEventListener("click", async () => {
 
         $shopLinks.appendChild(linkEl);
         shopLinkElements.push(linkEl);
-        }
+      }
 
-// 슬라이드
+      $shopLinks.style.display = "flex";
+      document.getElementById("shopTitle").style.display = "block";
+
+      // 🔹 슬라이드 기능 (1장씩)
       let currentIndex = 0;
       function showSlide(index) {
         shopLinkElements.forEach((el, i) => {
           el.style.display = i === index ? "flex" : "none";
-  });
-}
+        });
+      }
+
       showSlide(currentIndex);
+
       setInterval(() => {
         currentIndex = (currentIndex + 1) % shopLinkElements.length;
         showSlide(currentIndex);
-}, 5000);
+      }, 5000);
 
     }
   } catch (e) {
@@ -433,11 +441,16 @@ $cameraBtn.addEventListener("click", async () => {
   }
 });
 
-// 5분마다 서버에 ping
+// 5분마다 서버 ping
 setInterval(async () => {
   try {
     const res = await fetch("https://backend-6i2t.onrender.com/ping");
     if (res.ok) console.log("서버 ping 성공");
+  } catch (err) {
+    console.warn("서버 ping 실패:", err);
+  }
+}, 5 * 60 * 1000);
+
   } catch (err) {
     console.warn("서버 ping 실패:", err);
   }
