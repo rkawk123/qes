@@ -117,46 +117,32 @@ $btn.addEventListener("click", async () => {
       ];
 
       $shopLinks.innerHTML = "";
-      $shopLinks.style.position = "relative";
-      $shopLinks.style.width = "300px";
-      $shopLinks.style.height = "300px";
-      $shopLinks.style.overflow = "hidden";
-
       const shopLinkElements = [];
 
+      // 🔹 여기서 한 장씩만 넣도록 수정
       images.forEach((src, i) => {
         const linkEl = document.createElement("a");
         linkEl.href = links[i % links.length];
         linkEl.target = "_blank";
         linkEl.className = "shop-link";
-        linkEl.style.position = "absolute";
-        linkEl.style.top = "0";
-        linkEl.style.left = "0";
-        linkEl.style.width = "100%";
-        linkEl.style.height = "100%";
-        linkEl.style.display = "flex";
-        linkEl.style.justifyContent = "center";
-        linkEl.style.alignItems = "center";
-        linkEl.style.transition = "opacity 0.5s ease";
 
         const imgEl = document.createElement("img");
         imgEl.src = src;
         imgEl.alt = classFolder;
-        imgEl.style.maxWidth = "100%";
-        imgEl.style.maxHeight = "100%";
-
         linkEl.appendChild(imgEl);
+
         $shopLinks.appendChild(linkEl);
         shopLinkElements.push(linkEl);
       });
 
+      $shopLinks.style.display = "flex";
       document.getElementById("shopTitle").style.display = "block";
 
+      // 🔹 슬라이드 기능 (한 장씩)
       let currentIndex = 0;
       function showSlide(index) {
         shopLinkElements.forEach((el, i) => {
-          el.style.opacity = i === index ? "1" : "0";
-          el.style.pointerEvents = i === index ? "auto" : "none";
+          el.style.display = i === index ? "flex" : "none";
         });
       }
 
