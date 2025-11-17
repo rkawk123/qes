@@ -318,6 +318,13 @@ h1 {
   box-sizing: border-box; /* 패딩 포함해서 폭 계산 */
   flex-shrink: 0;         /* 컨테이너 줄어들어도 푸터 안쪽 유지 */
 }
+/* 쇼핑몰 슬라이더 이미지 스타일 */
+#carousel img {
+    width: 300px;
+    height: 300px;
+    object-fit: cover;
+    cursor: pointer;
+}
 
 /* 모바일 */
 @media (max-width: 480px) {
