@@ -340,7 +340,7 @@ $btn.addEventListener("click", async () => {
       $shopLinks.innerHTML = "";
       const shopLinkElements = [];
 
-      // 한 번에 한 장씩 보이도록 이미지 생성
+      // 🔹 여기서 한 장씩만 넣도록 수정
       images.forEach((src, i) => {
         const linkEl = document.createElement("a");
         linkEl.href = links[i % links.length];
@@ -359,28 +359,18 @@ $btn.addEventListener("click", async () => {
       $shopLinks.style.display = "flex";
       document.getElementById("shopTitle").style.display = "block";
 
-      // 슬라이드 기능 (한 장씩, 오른쪽 → 왼쪽)
+      // 🔹 슬라이드 기능 (한 장씩)
       let currentIndex = 0;
       function showSlide(index) {
         shopLinkElements.forEach((el, i) => {
           el.style.display = i === index ? "flex" : "none";
-          el.style.opacity = i === index ? "1" : "0";
-          el.style.transition = "all 0.5s ease";
-          el.style.transform = i === index ? "translateX(0)" : "translateX(100%)";
         });
       }
 
       showSlide(currentIndex);
       setInterval(() => {
-        const prevIndex = currentIndex;
         currentIndex = (currentIndex + 1) % shopLinkElements.length;
-        // 이전 이미지를 왼쪽으로 슬라이드
-        shopLinkElements[prevIndex].style.transform = "translateX(-100%)";
-        shopLinkElements[prevIndex].style.opacity = "0";
-        // 다음 이미지를 중앙으로 슬라이드
-        shopLinkElements[currentIndex].style.display = "flex";
-        shopLinkElements[currentIndex].style.transform = "translateX(0)";
-        shopLinkElements[currentIndex].style.opacity = "1";
+        showSlide(currentIndex);
       }, 5000);
     }
   } catch (e) {
