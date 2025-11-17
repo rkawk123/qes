@@ -96,6 +96,7 @@ $btn.addEventListener("click", async () => {
       $result.textContent = "예측 결과를 받지 못했습니다.";
     }
 
+    // 🔹 AI 추천 이미지 슬라이드
     if (data.ko_name) {
       $resultText.innerHTML = `
         <h3>${data.ko_name} (${data.predicted_fabric})</h3>
@@ -118,7 +119,6 @@ $btn.addEventListener("click", async () => {
 
       $shopLinks.innerHTML = "";
 
-      // 슬라이드 래퍼 생성
       const slideWrapper = document.createElement("div");
       slideWrapper.className = "slide-wrapper";
 
@@ -136,23 +136,16 @@ $btn.addEventListener("click", async () => {
       });
 
       $shopLinks.appendChild(slideWrapper);
-      $shopLinks.style.display = "block";
+      $shopLinks.style.display = "flex";
       document.getElementById("shopTitle").style.display = "block";
 
-      // 슬라이드 기능 (오른쪽→왼쪽)
+      // 슬라이드 애니메이션
       let currentIndex = 0;
-      const imgEl = slideWrapper.querySelector("img");
-      const imgWidth = imgEl.offsetWidth + 15; // 이미지 + margin
-
-      function showSlide(index) {
-        slideWrapper.style.transform = `translateX(${-index * imgWidth}px)`;
-      }
-
-      showSlide(currentIndex);
-
+      const total = images.length;
+      const slideWidth = 230; // 이미지 1장 너비
       setInterval(() => {
-        currentIndex = (currentIndex + 1) % slideWrapper.children.length;
-        showSlide(currentIndex);
+        currentIndex = (currentIndex + 1) % total;
+        slideWrapper.style.transform = `translateX(-${currentIndex * slideWidth}px)`;
       }, 5000);
     }
   } catch (e) {
