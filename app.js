@@ -234,7 +234,7 @@ const $previewWrapper = document.querySelector(".preview-wrapper");
 const $captureBtn = document.createElement("div");
 const $video = document.createElement("video");
 const $canvas = document.createElement("canvas");
-const $shopLinks = document.getElementById("shopLinks"); // 링크 요소 가져오기
+const $shopLinks = document.getElementById("shopLinks");
 
 // 드래그 & 드롭
 ["dragenter", "dragover"].forEach(eventName => {
@@ -257,14 +257,14 @@ $dropArea.addEventListener("drop", e => {
   const files = e.dataTransfer.files;
   if (files.length > 0) {
     $file.files = files;
-    document.getElementById("shopTitle").style.display = "none"; // 제목 숨기기
+    document.getElementById("shopTitle").style.display = "none";
     showPreview(files[0]);
   }
 });
 
 $file.addEventListener("change", () => {
   if ($file.files.length > 0) {
-    document.getElementById("shopTitle").style.display = "none"; // 제목 숨기기
+    document.getElementById("shopTitle").style.display = "none";
     showPreview($file.files[0]);
   }
 });
@@ -274,13 +274,13 @@ function showPreview(fileOrBlob) {
   reader.onload = e => {
     $preview.onload = () => {
       $scanLine.style.width = $preview.clientWidth + "px";
-      $scanLine.style.left = $preview.offsetLeft + "px"; // 이미지 왼쪽 기준 맞춤
+      $scanLine.style.left = $preview.offsetLeft + "px";
     };
     $preview.src = e.target.result;
     $result.textContent = "";
     $resultText.innerHTML = "";
-    $shopLinks.style.display = "none"; // 새로운 이미지 올릴 때 링크 숨기기
-    document.getElementById("shopTitle").style.display = "none"; // 제목 숨기기
+    $shopLinks.style.display = "none";
+    document.getElementById("shopTitle").style.display = "none";
   };
   reader.readAsDataURL(fileOrBlob);
 }
@@ -300,8 +300,8 @@ $btn.addEventListener("click", async () => {
   $scanLine.style.display = "block";
   $result.textContent = "";
   $resultText.innerHTML = "";
-  $shopLinks.style.display = "none"; // 로딩 중엔 링크 숨김
-  document.getElementById("shopTitle").style.display = "none"; // 제목 숨기기
+  $shopLinks.style.display = "none";
+  document.getElementById("shopTitle").style.display = "none";
 
   try {
     const res = await fetch(API, { method: "POST", body: fd });
@@ -328,14 +328,13 @@ $btn.addEventListener("click", async () => {
         <p>⚠️ 주의사항: ${data.special_note}</p>
       `;
 
-      // 🔗 클래스 폴더 안 이미지 자동 불러오기 (PNG, 1~6)
-      const classFolder = data.predicted_fabric; // 폴더명 (영문)
+      // 🔗 파일명 방식 (images/클래스명1.png~6.png)
+      const classFolder = data.predicted_fabric;
       const images = [];
       for (let i = 1; i <= 6; i++) {
-        images.push(`./images/${classFolder}/${i}.png`); // PNG, 순서 중요
+        images.push(`./images/${classFolder}${i}.png`);
       }
 
-      // 링크는 한글 검색어 사용
       const links = [
         `https://search.shopping.naver.com/search/all?query=${encodeURIComponent(data.ko_name)}`,
         `https://www.musinsa.com/search/musinsa/integration?keyword=${encodeURIComponent(data.ko_name)}`,
@@ -349,7 +348,6 @@ $btn.addEventListener("click", async () => {
         linkEl.target = "_blank";
         linkEl.className = "shop-link";
 
-        // 이미지 두 개씩 넣기
         const imgIdx = i * 2;
         [images[imgIdx], images[imgIdx + 1]].forEach(src => {
           const imgEl = document.createElement("img");
@@ -362,7 +360,7 @@ $btn.addEventListener("click", async () => {
       }
 
       $shopLinks.style.display = "flex";
-      document.getElementById("shopTitle").style.display = "block"; // AI 추천 표시
+      document.getElementById("shopTitle").style.display = "block";
     }
   } catch (e) {
     $result.textContent = "에러: " + e.message;
@@ -431,12 +429,8 @@ $cameraBtn.addEventListener("click", async () => {
 setInterval(async () => {
   try {
     const res = await fetch("https://backend-6i2t.onrender.com/ping");
-    if (res.ok) {
-      console.log("서버 ping 성공");
-    }
+    if (res.ok) console.log("서버 ping 성공");
   } catch (err) {
     console.warn("서버 ping 실패:", err);
   }
-}, 5 * 60 * 1000); // 5분 = 300,000 ms
-
-
+}, 5 * 60 * 1000);
