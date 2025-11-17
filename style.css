@@ -716,6 +716,21 @@ h1 {
   box-sizing: border-box; /* 패딩 포함해서 폭 계산 */
   flex-shrink: 0;         /* 컨테이너 줄어들어도 푸터 안쪽 유지 */
 }
+#shopLinks {
+  width: 230px; /* 이미지 한 장과 동일 */
+  overflow: hidden;
+}
+
+.slide-wrapper {
+  display: flex;
+  transition: transform 0.8s ease-in-out;
+}
+
+.slide-wrapper img {
+  height: 150px;
+  width: auto;
+  flex-shrink: 0;
+}
 
 /* 모바일 */
 @media (max-width: 480px) {
