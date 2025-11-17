@@ -325,7 +325,7 @@ $btn.addEventListener("click", async () => {
         <p>⚠️ 주의사항: ${data.special_note}</p>
       `;
 
-      // 이미지 6장 불러오기
+      // 🔗 파일명 방식 적용 (소문자로 변환)
       const classFolder = data.predicted_fabric.toLowerCase();
       const images = [];
       for (let i = 1; i <= 6; i++) {
@@ -341,12 +341,10 @@ $btn.addEventListener("click", async () => {
       $shopLinks.innerHTML = "";
       const shopLinkElements = [];
 
-      // 🔥 한 링크 + 이미지 1장씩
-      for (let i = 0; i < links.length; i++) {
-        if (!images[i]) continue;
-
+      // 각 링크에 한 장씩만 이미지 넣기
+      for (let i = 0; i < images.length; i++) {
         const linkEl = document.createElement("a");
-        linkEl.href = links[i];
+        linkEl.href = links[i % links.length];
         linkEl.target = "_blank";
         linkEl.className = "shop-link";
 
@@ -369,14 +367,11 @@ $btn.addEventListener("click", async () => {
           el.style.display = i === index ? "flex" : "none";
         });
       }
-
       showSlide(currentIndex);
-
       setInterval(() => {
         currentIndex = (currentIndex + 1) % shopLinkElements.length;
         showSlide(currentIndex);
-      }, 5000);
-
+      }, 5000); // 5초마다 전환
     }
   } catch (e) {
     $result.textContent = "에러: " + e.message;
@@ -420,7 +415,6 @@ $cameraBtn.addEventListener("click", async () => {
       $canvas.getContext("2d").drawImage($video, 0, 0);
 
       const blob = await new Promise(resolve => $canvas.toBlob(resolve, "image/png"));
-
       stream.getTracks().forEach(track => track.stop());
 
       $preview.src = URL.createObjectURL(blob);
@@ -441,7 +435,7 @@ $cameraBtn.addEventListener("click", async () => {
   }
 });
 
-// 5분마다 서버 ping
+// 5분마다 서버에 ping
 setInterval(async () => {
   try {
     const res = await fetch("https://backend-6i2t.onrender.com/ping");
@@ -451,7 +445,4 @@ setInterval(async () => {
   }
 }, 5 * 60 * 1000);
 
-  } catch (err) {
-    console.warn("서버 ping 실패:", err);
-  }
 }, 5 * 60 * 1000);
