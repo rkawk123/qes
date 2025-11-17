@@ -328,13 +328,14 @@ $btn.addEventListener("click", async () => {
         <p>⚠️ 주의사항: ${data.special_note}</p>
       `;
 
-      // 🔗 클래스 폴더 안 이미지 자동 불러오기
+      // 🔗 클래스 폴더 안 이미지 자동 불러오기 (PNG, 1~6)
       const classFolder = data.predicted_fabric; // 클래스명
       const images = [];
       for (let i = 1; i <= 6; i++) {
-        images.push(`./images/${classFolder}/${i}.png`); // PNG로 가정
+        images.push(`./images/${classFolder}/${i}.png`); // PNG로 고정, 순서 중요
       }
 
+      // 링크는 한글 검색어 그대로
       const links = [
         `https://search.shopping.naver.com/search/all?query=${encodeURIComponent(classFolder)}`,
         `https://www.musinsa.com/search/musinsa/integration?keyword=${encodeURIComponent(classFolder)}`,
@@ -443,4 +444,5 @@ setInterval(async () => {
     console.warn("서버 ping 실패:", err);
   }
 }, 5 * 60 * 1000); // 5분 = 300,000 ms
+
 
