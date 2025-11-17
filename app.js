@@ -339,6 +339,8 @@ $btn.addEventListener("click", async () => {
       ];
 
       $shopLinks.innerHTML = "";
+      const shopLinkElements = [];
+
       for (let i = 0; i < links.length; i++) {
         const linkEl = document.createElement("a");
         linkEl.href = links[i];
@@ -354,10 +356,25 @@ $btn.addEventListener("click", async () => {
         });
 
         $shopLinks.appendChild(linkEl);
+        shopLinkElements.push(linkEl); // 슬라이드용 배열에 저장
       }
 
       $shopLinks.style.display = "flex";
       document.getElementById("shopTitle").style.display = "block";
+
+      // 🔹 슬라이드 기능
+      let currentIndex = 0;
+      function showSlide(index) {
+        shopLinkElements.forEach((el, i) => {
+          el.style.display = i === index ? "flex" : "none";
+        });
+      }
+
+      showSlide(currentIndex);
+      setInterval(() => {
+        currentIndex = (currentIndex + 1) % shopLinkElements.length;
+        showSlide(currentIndex);
+      }, 5000); // 5초마다 전환
     }
   } catch (e) {
     $result.textContent = "에러: " + e.message;
