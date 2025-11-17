@@ -207,6 +207,61 @@ $cameraBtn.addEventListener("click", async () => {
     alert("카메라를 사용할 수 없습니다: " + err.message);
   }
 });
+/* ============================
+   쇼핑몰 추천 슬라이드 기능 추가
+=============================== */
+
+// 쇼핑몰 URL 3개 (원하는 URL로 수정 가능)
+const shopUrls = [
+    "https://shop1.com",
+    "https://shop2.com",
+    "https://shop3.com"
+];
+
+// 쇼핑몰 추천 버튼 클릭 → 슬라이드 생성
+document.getElementById("shopBtn").addEventListener("click", () => {
+    const fabric = "cotton";  // 현재 백엔드 오류로 일단 고정
+
+    // c1~c6 이미지 배열 생성
+    let imgs = [];
+    for (let i = 1; i <= 6; i++) {
+        imgs.push(`images/${fabric[0]}${i}.png`);
+    }
+
+    // 랜덤 셔플
+    imgs = imgs.sort(() => Math.random() - 0.5);
+
+    const carousel = document.getElementById("carousel");
+    carousel.innerHTML = "";
+
+    // 각 이미지 생성 + URL 매핑
+    imgs.forEach((src, idx) => {
+        const img = document.createElement("img");
+        img.src = src;
+
+        // 이미지 클릭 시 → URL 연결 (2장씩 담당)
+        const urlIndex = Math.floor(idx / 2);
+        img.onclick = () => {
+            window.open(shopUrls[urlIndex], "_blank");
+        };
+
+        carousel.appendChild(img);
+    });
+
+    // 보이도록 설정
+    document.getElementById("carousel-wrapper").style.display = "block";
+    document.getElementById("nextBtn").style.display = "block";
+});
+
+// 슬라이드 이동
+let slideIndex = 0;
+document.getElementById("nextBtn").addEventListener("click", () => {
+    slideIndex++;
+    if (slideIndex > 5) slideIndex = 0;
+
+    const carousel = document.getElementById("carousel");
+    carousel.style.transform = `translateX(-${slideIndex * 300}px)`;
+});
 
 // 5분마다 서버에 ping
 setInterval(async () => {
