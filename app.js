@@ -328,28 +328,38 @@ $btn.addEventListener("click", async () => {
         <p>⚠️ 주의사항: ${data.special_note}</p>
       `;
 
-      // 🔗 클래스별 이미지 6개를 3개 링크에 2개씩 배치
-      const fabricName = data.ko_name || data.predicted_fabric;
-      const classFolder = fabricName.replace(/\s+/g, "_"); // 공백은 _로
-      const shopLinksData = [
-        { name: "네이버 쇼핑", url: `https://search.shopping.naver.com/search/all?query=${encodeURIComponent(fabricName)}` },
-        { name: "무신사", url: `https://www.musinsa.com/search/musinsa/integration?keyword=${encodeURIComponent(fabricName)}` },
-        { name: "스파오", url: `https://www.spao.com/product/search.html?keyword=${encodeURIComponent(fabricName)}` }
+      // 🔗 클래스 폴더 안 이미지 자동 불러오기
+      const classFolder = data.predicted_fabric; // 클래스명
+      const images = [];
+      for (let i = 1; i <= 6; i++) {
+        images.push(`./images/${classFolder}/${i}.png`); // PNG로 가정
+      }
+
+      const links = [
+        `https://search.shopping.naver.com/search/all?query=${encodeURIComponent(classFolder)}`,
+        `https://www.musinsa.com/search/musinsa/integration?keyword=${encodeURIComponent(classFolder)}`,
+        `https://www.spao.com/product/search.html?keyword=${encodeURIComponent(classFolder)}`
       ];
 
-      let html = "";
-      shopLinksData.forEach((link, idx) => {
-        for (let i = 1; i <= 2; i++) {
-          const imgPath = `./images/${classFolder}/${idx * 2 + i}.jpg`; // 각 링크마다 2개씩
-          html += `
-            <a href="${link.url}" target="_blank" class="shop-link">
-              <img src="${imgPath}" alt="${link.name} 로고">
-            </a>
-          `;
-        }
-      });
+      $shopLinks.innerHTML = "";
+      for (let i = 0; i < links.length; i++) {
+        const linkEl = document.createElement("a");
+        linkEl.href = links[i];
+        linkEl.target = "_blank";
+        linkEl.className = "shop-link";
 
-      $shopLinks.innerHTML = html;
+        // 이미지 두 개씩 넣기
+        const imgIdx = i * 2;
+        [images[imgIdx], images[imgIdx + 1]].forEach(src => {
+          const imgEl = document.createElement("img");
+          imgEl.src = src;
+          imgEl.alt = classFolder;
+          linkEl.appendChild(imgEl);
+        });
+
+        $shopLinks.appendChild(linkEl);
+      }
+
       $shopLinks.style.display = "flex";
       document.getElementById("shopTitle").style.display = "block"; // AI 추천 표시
     }
@@ -433,3 +443,4 @@ setInterval(async () => {
     console.warn("서버 ping 실패:", err);
   }
 }, 5 * 60 * 1000); // 5분 = 300,000 ms
+
