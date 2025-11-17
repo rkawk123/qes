@@ -341,32 +341,35 @@ $btn.addEventListener("click", async () => {
       $shopLinks.innerHTML = "";
       const shopLinkElements = [];
 
-      // 각 링크에 한 장씩만 이미지 넣기
-      for (let i = 0; i < images.length; i++) {
+      for (let i = 0; i < links.length; i++) {
         const linkEl = document.createElement("a");
-        linkEl.href = links[i % links.length];
+        linkEl.href = links[i];
         linkEl.target = "_blank";
         linkEl.className = "shop-link";
 
-        const imgEl = document.createElement("img");
-        imgEl.src = images[i];
-        imgEl.alt = classFolder;
-        linkEl.appendChild(imgEl);
+        const imgIdx = i * 2;
+        [images[imgIdx], images[imgIdx + 1]].forEach(src => {
+          const imgEl = document.createElement("img");
+          imgEl.src = src;
+          imgEl.alt = classFolder;
+          linkEl.appendChild(imgEl);
+        });
 
         $shopLinks.appendChild(linkEl);
-        shopLinkElements.push(linkEl);
+        shopLinkElements.push(linkEl); // 슬라이드용 배열에 저장
       }
 
       $shopLinks.style.display = "flex";
       document.getElementById("shopTitle").style.display = "block";
 
-      // 🔹 슬라이드 기능 (1장씩)
+      // 🔹 슬라이드 기능
       let currentIndex = 0;
       function showSlide(index) {
         shopLinkElements.forEach((el, i) => {
           el.style.display = i === index ? "flex" : "none";
         });
       }
+
       showSlide(currentIndex);
       setInterval(() => {
         currentIndex = (currentIndex + 1) % shopLinkElements.length;
@@ -415,6 +418,7 @@ $cameraBtn.addEventListener("click", async () => {
       $canvas.getContext("2d").drawImage($video, 0, 0);
 
       const blob = await new Promise(resolve => $canvas.toBlob(resolve, "image/png"));
+
       stream.getTracks().forEach(track => track.stop());
 
       $preview.src = URL.createObjectURL(blob);
@@ -444,4 +448,3 @@ setInterval(async () => {
     console.warn("서버 ping 실패:", err);
   }
 }, 5 * 60 * 1000);
-
