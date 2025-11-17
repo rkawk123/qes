@@ -210,7 +210,30 @@ const $previewWrapper = document.querySelector(".preview-wrapper");
 const $captureBtn = document.createElement("div");
 const $video = document.createElement("video");
 const $canvas = document.createElement("canvas");
-const $shopLinks = document.getElementById("shopLinks"); // 링크 요소 가져오기
+const $shopLinks = document.getElementById("shopLinks");
+
+let currentSlide = 0;
+let slideInterval;
+
+function createNavButtons() {
+  const prevBtn = document.createElement("button");
+  const nextBtn = document.createElement("button");
+  prevBtn.innerText = "<";
+  nextBtn.innerText = ">";
+  prevBtn.style.marginRight = "10px";
+  nextBtn.style.marginLeft = "10px";
+  prevBtn.className = "slide-nav";
+  nextBtn.className = "slide-nav";
+  $shopLinks.parentElement.appendChild(prevBtn);
+  $shopLinks.parentElement.appendChild(nextBtn);
+
+  prevBtn.addEventListener("click", () => {
+    showSlide(currentSlide - 1);
+  });
+  nextBtn.addEventListener("click", () => {
+    showSlide(currentSlide + 1);
+  });
+}
 
 // 드래그 & 드롭
 ["dragenter", "dragover"].forEach(eventName => {
@@ -220,7 +243,6 @@ const $shopLinks = document.getElementById("shopLinks"); // 링크 요소 가져
     $dropArea.classList.add("highlight");
   });
 });
-
 ["dragleave", "drop"].forEach(eventName => {
   $dropArea.addEventListener(eventName, e => {
     e.preventDefault();
@@ -228,19 +250,17 @@ const $shopLinks = document.getElementById("shopLinks"); // 링크 요소 가져
     $dropArea.classList.remove("highlight");
   });
 });
-
 $dropArea.addEventListener("drop", e => {
   const files = e.dataTransfer.files;
   if (files.length > 0) {
     $file.files = files;
-    document.getElementById("shopTitle").style.display = "none"; // 제목 숨기기
+    document.getElementById("shopTitle").style.display = "none";
     showPreview(files[0]);
   }
 });
-
 $file.addEventListener("change", () => {
   if ($file.files.length > 0) {
-    document.getElementById("shopTitle").style.display = "none"; // 제목 숨기기
+    document.getElementById("shopTitle").style.display = "none";
     showPreview($file.files[0]);
   }
 });
@@ -250,20 +270,27 @@ function showPreview(fileOrBlob) {
   reader.onload = e => {
     $preview.onload = () => {
       $scanLine.style.width = $preview.clientWidth + "px";
-      $scanLine.style.left = $preview.offsetLeft + "px"; 
+      $scanLine.style.left = $preview.offsetLeft + "px";
     };
     $preview.src = e.target.result;
-
-    // 미리보기 표시 시점에서는 결과 초기화 제거
-    // $result.textContent = "";
-    // $resultText.innerHTML = "";
-    
-    $shopLinks.style.display = "none"; // 새로운 이미지 올릴 때 링크 숨기기
-    document.getElementById("shopTitle").style.display = "none"; 
+    $shopLinks.style.display = "none";
+    document.getElementById("shopTitle").style.display = "none";
   };
   reader.readAsDataURL(fileOrBlob);
 }
 
+// 슬라이드 함수
+function showSlide(idx) {
+  const slides = Array.from($shopLinks.querySelectorAll("img"));
+  if (!slides.length) return;
+
+  currentSlide = (idx + slides.length) % slides.length;
+  slides.forEach((img, i) => {
+    img.style.display = i === currentSlide ? "block" : "none";
+  });
+}
+
+// 서버 업로드 및 예측
 $btn.addEventListener("click", async () => {
   let uploadFile = $file.files[0] || $file._cameraBlob;
   if (!uploadFile) {
@@ -271,19 +298,14 @@ $btn.addEventListener("click", async () => {
     return;
   }
 
-  // showPreview(uploadFile); ← 제거
-
   $loader.style.display = "inline-block";
   $scanLine.style.display = "block";
-
-  // 예측 시작 전 결과만 초기화
   $result.textContent = "";
   $resultText.innerHTML = "";
 
-  // 예측 실행 (현재 cotton 고정)
   const predictedFabric = "cotton";
   $resultText.innerHTML = `<h3>${predictedFabric}</h3>`;
-  
+
   const images = [1,2,3,4,5,6].sort(() => Math.random() - 0.5)
                   .map(i => `./images/${predictedFabric[0]}${i}.png`);
 
@@ -303,24 +325,24 @@ $btn.addEventListener("click", async () => {
     const imageEl = document.createElement("img");
     imageEl.src = img;
     imageEl.alt = shopLinksArr[linkIdx].name;
+    imageEl.style.width = "300px"; // 사진 크기 일정
+    imageEl.style.height = "300px";
     a.appendChild(imageEl);
     $shopLinks.appendChild(a);
   });
 
+  showSlide(0);
   $shopLinks.style.display = "flex";
-  $shopLinks.style.overflow = "hidden";
-  $shopLinks.style.width = "100%";
-  $shopLinks.style.transition = "transform 0.5s linear";
+  $shopLinks.style.justifyContent = "center";
+  $shopLinks.style.alignItems = "center";
 
-  let position = 0;
-  const slideWidth = 160;
-  const totalSlides = images.length;
+  // 자동 슬라이드 5초
+  clearInterval(slideInterval);
+  slideInterval = setInterval(() => {
+    showSlide(currentSlide + 1);
+  }, 5000);
 
-  setInterval(() => {
-    position += slideWidth;
-    if (position >= slideWidth * totalSlides) position = 0;
-    $shopLinks.style.transform = `translateX(-${position}px)`;
-  }, 2000);
+  createNavButtons();
 
   $loader.style.display = "none";
   $scanLine.style.display = "none";
@@ -333,49 +355,33 @@ $cameraBtn.addEventListener("click", async () => {
       video: { facingMode: { ideal: "environment" } },
       audio: false
     });
-
     $video.srcObject = stream;
     $video.autoplay = true;
     $video.playsInline = true;
     $video.width = 300;
     $video.height = 200;
-
     $previewWrapper.innerHTML = "";
     $previewWrapper.appendChild($video);
 
-    // 비디오 메타데이터 로드 완료 대기
     await new Promise(resolve => {
-      $video.onloadedmetadata = () => {
-        $video.play();
-        resolve();
-      };
+      $video.onloadedmetadata = () => { $video.play(); resolve(); };
     });
 
     $captureBtn.className = "capture-circle";
     $previewWrapper.appendChild($captureBtn);
 
     $captureBtn.addEventListener("click", async () => {
-      // video 크기 로드 후 캡처
       $canvas.width = $video.videoWidth;
       $canvas.height = $video.videoHeight;
       $canvas.getContext("2d").drawImage($video, 0, 0);
-
       const blob = await new Promise(resolve => $canvas.toBlob(resolve, "image/png"));
-
-      // 스트림 종료
       stream.getTracks().forEach(track => track.stop());
-
-      // 미리보기 표시
       $preview.src = URL.createObjectURL(blob);
       $previewWrapper.innerHTML = "";
       $previewWrapper.appendChild($preview);
-
-      // 스캔라인 복원
       $scanLine.className = "scan-line";
       $scanLine.id = "scan-line";
       $previewWrapper.appendChild($scanLine);
-
-      // 바로 예측 실행
       $file._cameraBlob = blob;
       $loader.style.display = "inline-block";
       $scanLine.style.display = "block";
@@ -386,13 +392,11 @@ $cameraBtn.addEventListener("click", async () => {
   }
 });
 
-// 5분마다 서버에 ping 보내기
+// 5분마다 서버 ping
 setInterval(async () => {
   try {
     const res = await fetch("https://backend-6i2t.onrender.com/ping");
-    if (res.ok) {
-      console.log("서버 ping 성공");
-    }
+    if (res.ok) console.log("서버 ping 성공");
   } catch (err) {
     console.warn("서버 ping 실패:", err);
   }
