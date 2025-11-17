@@ -341,40 +341,34 @@ $btn.addEventListener("click", async () => {
       $shopLinks.innerHTML = "";
       const shopLinkElements = [];
 
-      for (let i = 0; i < links.length; i++) {
+      for (let i = 0; i < images.length; i++) {
         const linkEl = document.createElement("a");
-        linkEl.href = links[i];
+        linkEl.href = `https://search.shopping.naver.com/search/all?query=${encodeURIComponent(data.ko_name)}`;
         linkEl.target = "_blank";
         linkEl.className = "shop-link";
 
-        const imgIdx = i * 2;
-        [images[imgIdx], images[imgIdx + 1]].forEach(src => {
-          const imgEl = document.createElement("img");
-          imgEl.src = src;
-          imgEl.alt = classFolder;
-          linkEl.appendChild(imgEl);
-        });
+        const imgEl = document.createElement("img");
+        imgEl.src = images[i];
+        imgEl.alt = classFolder;
+        linkEl.appendChild(imgEl);
 
         $shopLinks.appendChild(linkEl);
-        shopLinkElements.push(linkEl); // 슬라이드용 배열에 저장
-      }
+        shopLinkElements.push(linkEl);
+}
 
-      $shopLinks.style.display = "flex";
-      document.getElementById("shopTitle").style.display = "block";
-
-      // 🔹 슬라이드 기능
+// 슬라이드
       let currentIndex = 0;
       function showSlide(index) {
         shopLinkElements.forEach((el, i) => {
           el.style.display = i === index ? "flex" : "none";
-        });
-      }
-
+  });
+}
       showSlide(currentIndex);
       setInterval(() => {
         currentIndex = (currentIndex + 1) % shopLinkElements.length;
         showSlide(currentIndex);
-      }, 5000); // 5초마다 전환
+}, 5000);
+
     }
   } catch (e) {
     $result.textContent = "에러: " + e.message;
