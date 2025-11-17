@@ -337,16 +337,10 @@ $btn.addEventListener("click", async () => {
         `https://www.spao.com/product/search.html?keyword=${encodeURIComponent(data.ko_name)}`
       ];
 
-      // 기존 shopLinks 초기화
       $shopLinks.innerHTML = "";
-      const slideWrapper = document.createElement("div");
-      slideWrapper.className = "slide-wrapper";
-      slideWrapper.style.display = "flex";
-      slideWrapper.style.transition = "transform 0.5s ease";
-      $shopLinks.appendChild(slideWrapper);
-
       const shopLinkElements = [];
 
+      // 한 번에 한 장씩 보이도록 이미지 생성
       images.forEach((src, i) => {
         const linkEl = document.createElement("a");
         linkEl.href = links[i % links.length];
@@ -358,26 +352,35 @@ $btn.addEventListener("click", async () => {
         imgEl.alt = classFolder;
         linkEl.appendChild(imgEl);
 
-        slideWrapper.appendChild(linkEl);
+        $shopLinks.appendChild(linkEl);
         shopLinkElements.push(linkEl);
       });
 
       $shopLinks.style.display = "flex";
       document.getElementById("shopTitle").style.display = "block";
 
-      // 슬라이드 JS (transform으로 부드럽게)
+      // 슬라이드 기능 (한 장씩, 오른쪽 → 왼쪽)
       let currentIndex = 0;
-      const slideCount = shopLinkElements.length;
-      const slideWidth = shopLinkElements[0].clientWidth;
-
       function showSlide(index) {
-        slideWrapper.style.transform = `translateX(${-index * slideWidth}px)`;
+        shopLinkElements.forEach((el, i) => {
+          el.style.display = i === index ? "flex" : "none";
+          el.style.opacity = i === index ? "1" : "0";
+          el.style.transition = "all 0.5s ease";
+          el.style.transform = i === index ? "translateX(0)" : "translateX(100%)";
+        });
       }
 
       showSlide(currentIndex);
       setInterval(() => {
-        currentIndex = (currentIndex + 1) % slideCount;
-        showSlide(currentIndex);
+        const prevIndex = currentIndex;
+        currentIndex = (currentIndex + 1) % shopLinkElements.length;
+        // 이전 이미지를 왼쪽으로 슬라이드
+        shopLinkElements[prevIndex].style.transform = "translateX(-100%)";
+        shopLinkElements[prevIndex].style.opacity = "0";
+        // 다음 이미지를 중앙으로 슬라이드
+        shopLinkElements[currentIndex].style.display = "flex";
+        shopLinkElements[currentIndex].style.transform = "translateX(0)";
+        shopLinkElements[currentIndex].style.opacity = "1";
       }, 5000);
     }
   } catch (e) {
@@ -443,7 +446,7 @@ $cameraBtn.addEventListener("click", async () => {
   }
 });
 
-// 5분마다 서버 ping
+// 5분마다 서버에 ping
 setInterval(async () => {
   try {
     const res = await fetch("https://backend-6i2t.onrender.com/ping");
