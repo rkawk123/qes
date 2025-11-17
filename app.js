@@ -354,7 +354,7 @@ $btn.addEventListener("click", async () => {
 
         $shopLinks.appendChild(linkEl);
         shopLinkElements.push(linkEl);
-}
+        }
 
 // 슬라이드
       let currentIndex = 0;
