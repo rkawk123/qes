@@ -338,9 +338,17 @@ $btn.addEventListener("click", async () => {
       ];
 
       $shopLinks.innerHTML = "";
+      $shopLinks.style.display = "flex";
+      $shopLinks.style.overflow = "hidden";
+      $shopLinks.style.position = "relative";
+
+      const slideWrapper = document.createElement("div");
+      slideWrapper.style.display = "flex";
+      slideWrapper.style.transition = "transform 0.5s ease";
+      $shopLinks.appendChild(slideWrapper);
+
       const shopLinkElements = [];
 
-      // 🔹 여기서 한 장씩만 넣도록 수정
       images.forEach((src, i) => {
         const linkEl = document.createElement("a");
         linkEl.href = links[i % links.length];
@@ -352,19 +360,17 @@ $btn.addEventListener("click", async () => {
         imgEl.alt = classFolder;
         linkEl.appendChild(imgEl);
 
-        $shopLinks.appendChild(linkEl);
+        slideWrapper.appendChild(linkEl);
         shopLinkElements.push(linkEl);
       });
 
-      $shopLinks.style.display = "flex";
       document.getElementById("shopTitle").style.display = "block";
 
-      // 🔹 슬라이드 기능 (한 장씩)
+      // 슬라이드 애니메이션
       let currentIndex = 0;
       function showSlide(index) {
-        shopLinkElements.forEach((el, i) => {
-          el.style.display = i === index ? "flex" : "none";
-        });
+        const offset = -index * 100;
+        slideWrapper.style.transform = `translateX(${offset}%)`;
       }
 
       showSlide(currentIndex);
