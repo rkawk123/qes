@@ -325,7 +325,6 @@ $btn.addEventListener("click", async () => {
         <p>⚠️ 주의사항: ${data.special_note}</p>
       `;
 
-      // 🔗 파일명 방식 적용 (소문자로 변환)
       const classFolder = data.predicted_fabric.toLowerCase();
       const images = [];
       for (let i = 1; i <= 6; i++) {
@@ -341,28 +340,26 @@ $btn.addEventListener("click", async () => {
       $shopLinks.innerHTML = "";
       const shopLinkElements = [];
 
-      for (let i = 0; i < links.length; i++) {
+      // 🔹 여기서 한 장씩만 넣도록 수정
+      images.forEach((src, i) => {
         const linkEl = document.createElement("a");
-        linkEl.href = links[i];
+        linkEl.href = links[i % links.length];
         linkEl.target = "_blank";
         linkEl.className = "shop-link";
 
-        const imgIdx = i * 2;
-        [images[imgIdx], images[imgIdx + 1]].forEach(src => {
-          const imgEl = document.createElement("img");
-          imgEl.src = src;
-          imgEl.alt = classFolder;
-          linkEl.appendChild(imgEl);
-        });
+        const imgEl = document.createElement("img");
+        imgEl.src = src;
+        imgEl.alt = classFolder;
+        linkEl.appendChild(imgEl);
 
         $shopLinks.appendChild(linkEl);
-        shopLinkElements.push(linkEl); // 슬라이드용 배열에 저장
-      }
+        shopLinkElements.push(linkEl);
+      });
 
       $shopLinks.style.display = "flex";
       document.getElementById("shopTitle").style.display = "block";
 
-      // 🔹 슬라이드 기능
+      // 🔹 슬라이드 기능 (한 장씩)
       let currentIndex = 0;
       function showSlide(index) {
         shopLinkElements.forEach((el, i) => {
@@ -374,7 +371,7 @@ $btn.addEventListener("click", async () => {
       setInterval(() => {
         currentIndex = (currentIndex + 1) % shopLinkElements.length;
         showSlide(currentIndex);
-      }, 5000); // 5초마다 전환
+      }, 5000);
     }
   } catch (e) {
     $result.textContent = "에러: " + e.message;
