@@ -96,6 +96,7 @@ $btn.addEventListener("click", async () => {
       $result.textContent = "예측 결과를 받지 못했습니다.";
     }
 
+    // 🔹 AI 추천 이미지 슬라이드
     if (data.ko_name) {
       $resultText.innerHTML = `
         <h3>${data.ko_name} (${data.predicted_fabric})</h3>
@@ -117,39 +118,34 @@ $btn.addEventListener("click", async () => {
       ];
 
       $shopLinks.innerHTML = "";
-      const shopLinkElements = [];
 
-      // 🔹 여기서 한 장씩만 넣도록 수정
+      const slideWrapper = document.createElement("div");
+      slideWrapper.className = "slide-wrapper";
+
       images.forEach((src, i) => {
         const linkEl = document.createElement("a");
         linkEl.href = links[i % links.length];
         linkEl.target = "_blank";
-        linkEl.className = "shop-link";
 
         const imgEl = document.createElement("img");
         imgEl.src = src;
         imgEl.alt = classFolder;
-        linkEl.appendChild(imgEl);
 
-        $shopLinks.appendChild(linkEl);
-        shopLinkElements.push(linkEl);
+        linkEl.appendChild(imgEl);
+        slideWrapper.appendChild(linkEl);
       });
 
+      $shopLinks.appendChild(slideWrapper);
       $shopLinks.style.display = "flex";
       document.getElementById("shopTitle").style.display = "block";
 
-      // 🔹 슬라이드 기능 (한 장씩)
+      // 슬라이드 애니메이션
       let currentIndex = 0;
-      function showSlide(index) {
-        shopLinkElements.forEach((el, i) => {
-          el.style.display = i === index ? "flex" : "none";
-        });
-      }
-
-      showSlide(currentIndex);
+      const total = images.length;
+      const slideWidth = 230; // 이미지 1장 너비
       setInterval(() => {
-        currentIndex = (currentIndex + 1) % shopLinkElements.length;
-        showSlide(currentIndex);
+        currentIndex = (currentIndex + 1) % total;
+        slideWrapper.style.transform = `translateX(-${currentIndex * slideWidth}px)`;
       }, 5000);
     }
   } catch (e) {
