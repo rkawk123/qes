@@ -105,7 +105,7 @@ $btn.addEventListener("click", async () => {
       $result.textContent = "예측 결과를 받지 못했습니다.";
     }
 
-    // 🔹 AI 추천 이미지 (페이드 전환)
+    // 🔹 AI 추천 이미지 (페이드 + 링크 2장씩)
     if (data.ko_name) {
       $resultText.innerHTML = `
         <h3>${data.ko_name} (${data.predicted_fabric})</h3>
@@ -142,46 +142,46 @@ $btn.addEventListener("click", async () => {
       ];
 
       $shopLinks.innerHTML = "";
+      const fadeWrapper = document.createElement("div");
+      fadeWrapper.className = "fade-wrapper";
+      fadeWrapper.style.position = "relative";
+      fadeWrapper.style.width = "100%";
+      fadeWrapper.style.height = "auto";
 
-      // 이미지 & 링크 할당
-      const imgEl = document.createElement("img");
-      imgEl.style.maxWidth = "300px";
-      imgEl.style.maxHeight = "300px";
-      imgEl.style.display = "block";
-      imgEl.style.margin = "0 auto";
-      imgEl.style.transition = "opacity 1s";
-      imgEl.style.opacity = 0;
-      $shopLinks.appendChild(imgEl);
+      images.forEach((src, i) => {
+        const linkEl = document.createElement("a");
+        linkEl.href = links[Math.floor(i / 2) % links.length]; // 링크당 2장
+        linkEl.target = "_blank";
 
+        const imgEl = document.createElement("img");
+        imgEl.src = src;
+        imgEl.alt = classFolder;
+        imgEl.style.position = "absolute";
+        imgEl.style.top = "0";
+        imgEl.style.left = "50%";
+        imgEl.style.transform = "translateX(-50%)";
+        imgEl.style.opacity = "0";
+        imgEl.style.transition = "opacity 1s ease";
+        imgEl.style.maxWidth = "100%";
+        imgEl.style.height = "auto";
+
+        linkEl.appendChild(imgEl);
+        fadeWrapper.appendChild(linkEl);
+      });
+
+      $shopLinks.appendChild(fadeWrapper);
+      $shopLinks.style.display = "block";
       document.getElementById("shopTitle").style.display = "block";
 
-      let currentIndex = 0;
-      function showImage(index) {
-        const linkIndex = Math.floor(index / 2) % links.length;
-        const linkURL = links[linkIndex];
-
-        imgEl.style.opacity = 0;
-        setTimeout(() => {
-          imgEl.src = images[index];
-          if (!imgEl.parentElement || imgEl.parentElement.tagName !== "A") {
-            const linkWrapper = document.createElement("a");
-            linkWrapper.href = linkURL;
-            linkWrapper.target = "_blank";
-            $shopLinks.innerHTML = "";
-            linkWrapper.appendChild(imgEl);
-            $shopLinks.appendChild(linkWrapper);
-          } else {
-            imgEl.parentElement.href = linkURL;
-          }
-          imgEl.style.opacity = 1;
-        }, 300);
-      }
-
-      showImage(currentIndex);
+      const fadeImages = fadeWrapper.querySelectorAll("img");
+      let fadeIndex = 0;
+      if (fadeImages.length > 0) fadeImages[0].style.opacity = "1";
 
       setInterval(() => {
-        currentIndex = (currentIndex + 1) % images.length;
-        showImage(currentIndex);
+        fadeImages.forEach((img, i) => {
+          img.style.opacity = i === fadeIndex ? "1" : "0";
+        });
+        fadeIndex = (fadeIndex + 1) % fadeImages.length;
       }, 5000);
     }
 
