@@ -134,19 +134,42 @@ $btn.addEventListener("click", async () => {
         linkEl.appendChild(imgEl);
         slideWrapper.appendChild(linkEl);
       });
+      // === 무한 루프를 위한 복제 추가 ===
+      const slides = slideWrapper.children;
+      const firstClone = slides[0].cloneNode(true);
+      const lastClone = slides[slides.length - 1].cloneNode(true);
+
+      slideWrapper.insertBefore(lastClone, slides[0]);
+      slideWrapper.appendChild(firstClone);
+
+      // 초기 위치: 1번째 실제 이미지
+      let currentIndex = 1;
+      const slideWidth = 230;
+      slideWrapper.style.transform = `translateX(-${slideWidth * currentIndex}px)`;
+      slideWrapper.style.transition = "none";
+
 
       $shopLinks.appendChild(slideWrapper);
       $shopLinks.style.display = "flex";
       document.getElementById("shopTitle").style.display = "block";
 
       // 슬라이드 애니메이션
-      let currentIndex = 0;
-      const total = images.length;
-      const slideWidth = 230; // 이미지 1장 너비
-      setInterval(() => {
-        currentIndex = (currentIndex + 1) % total;
-        slideWrapper.style.transform = `translateX(-${currentIndex * slideWidth}px)`;
+     setInterval(() => {
+        currentIndex++;
+        slideWrapper.style.transition = "transform 0.6s ease";
+        slideWrapper.style.transform = `translateX(-${slideWidth * currentIndex}px)`;
+
+        slideWrapper.addEventListener("transitionend", () => {
+    // 마지막 복제 이미지를 보고 있음 → 진짜 첫 장으로 순간이동
+          if (currentIndex === images.length + 1) {
+            slideWrapper.style.transition = "none";
+            currentIndex = 1;
+            slideWrapper.style.transform = `translateX(-${slideWidth * currentIndex}px)`;
+         }
+        }, { once: true });
+
       }, 5000);
+
     }
   } catch (e) {
     $result.textContent = "에러: " + e.message;
