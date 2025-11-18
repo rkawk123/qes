@@ -23,7 +23,6 @@ const $shopLinks = document.getElementById("shopLinks");
     $dropArea.classList.add("highlight");
   });
 });
-
 ["dragleave", "drop"].forEach(eventName => {
   $dropArea.addEventListener(eventName, e => {
     e.preventDefault();
@@ -31,7 +30,6 @@ const $shopLinks = document.getElementById("shopLinks");
     $dropArea.classList.remove("highlight");
   });
 });
-
 $dropArea.addEventListener("drop", e => {
   const files = e.dataTransfer.files;
   if (files.length > 0) {
@@ -40,7 +38,6 @@ $dropArea.addEventListener("drop", e => {
     showPreview(files[0]);
   }
 });
-
 $file.addEventListener("change", () => {
   if ($file.files.length > 0) {
     document.getElementById("shopTitle").style.display = "none";
@@ -109,7 +106,7 @@ $btn.addEventListener("click", async () => {
       `;
 
       const classFolder = data.predicted_fabric.toLowerCase();
-      const images = [];
+      let images = [];
       for (let i = 1; i <= 6; i++) {
         images.push(`./images/${classFolder}${i}.png`);
       }
@@ -121,11 +118,12 @@ $btn.addEventListener("click", async () => {
       ];
 
       $shopLinks.innerHTML = "";
-
       const slideWrapper = document.createElement("div");
       slideWrapper.className = "slide-wrapper";
 
-      images.forEach((src, i) => {
+      // 무한루프용 앞뒤 복제
+      const loopImages = [images[images.length - 1], ...images, images[0]];
+      loopImages.forEach((src, i) => {
         const linkEl = document.createElement("a");
         linkEl.href = links[i % links.length];
         linkEl.target = "_blank";
@@ -142,28 +140,33 @@ $btn.addEventListener("click", async () => {
       $shopLinks.style.display = "flex";
       document.getElementById("shopTitle").style.display = "block";
 
-      // 슬라이드 애니메이션 (중앙 기준)
-      let currentIndex = 0;
-      const total = images.length;
+      // 슬라이드 애니메이션
+      let currentIndex = 1; // 실제 첫 이미지
+      const total = loopImages.length;
+      const imgs = slideWrapper.querySelectorAll("img");
 
-      function updateSlide() {
-        const slideWrapper = document.querySelector(".slide-wrapper");
+      function updateSlide(animate = true) {
+        slideWrapper.style.transition = animate ? "transform 0.5s" : "none";
         const wrapperWidth = $shopLinks.clientWidth;
-        const imgEl = slideWrapper.querySelectorAll("img")[currentIndex];
+        const imgEl = imgs[currentIndex];
         const imgWidth = imgEl.clientWidth;
-
         const offset = imgEl.offsetLeft + imgWidth / 2 - wrapperWidth / 2;
         slideWrapper.style.transform = `translateX(${-offset}px)`;
       }
 
-      // 초기 위치
-      updateSlide();
+      updateSlide(false);
 
-      // 자동 슬라이드
       setInterval(() => {
-        currentIndex = (currentIndex + 1) % total;
+        currentIndex++;
         updateSlide();
-      }, 5000);
+
+        if (currentIndex === total - 1) {
+          setTimeout(() => {
+            currentIndex = 1;
+            updateSlide(false);
+          }, 500);
+        }
+      }, 5000); // 5초 간격
     }
   } catch (e) {
     $result.textContent = "에러: " + e.message;
@@ -207,7 +210,6 @@ $cameraBtn.addEventListener("click", async () => {
       $canvas.getContext("2d").drawImage($video, 0, 0);
 
       const blob = await new Promise(resolve => $canvas.toBlob(resolve, "image/png"));
-
       stream.getTracks().forEach(track => track.stop());
 
       $preview.src = URL.createObjectURL(blob);
