@@ -23,6 +23,7 @@ const $shopLinks = document.getElementById("shopLinks");
     $dropArea.classList.add("highlight");
   });
 });
+
 ["dragleave", "drop"].forEach(eventName => {
   $dropArea.addEventListener(eventName, e => {
     e.preventDefault();
@@ -47,21 +48,14 @@ $file.addEventListener("change", () => {
   }
 });
 
-// 미리보기
 function showPreview(fileOrBlob) {
-  if (!fileOrBlob) return;
   const reader = new FileReader();
   reader.onload = e => {
-    const dataURL = e.target.result;
-    if (!dataURL) return;
-
-    $preview.src = dataURL;
-    $preview.style.display = "block";
     $preview.onload = () => {
       $scanLine.style.width = $preview.clientWidth + "px";
       $scanLine.style.left = $preview.offsetLeft + "px";
     };
-
+    $preview.src = e.target.result;
     $result.textContent = "";
     $resultText.innerHTML = "";
     $shopLinks.style.display = "none";
@@ -105,7 +99,7 @@ $btn.addEventListener("click", async () => {
       $result.textContent = "예측 결과를 받지 못했습니다.";
     }
 
-    // 🔹 추천 이미지 1장 + 링크 + 부드러운 페이드
+    // 🔹 AI 추천 이미지 슬라이드
     if (data.ko_name) {
       $resultText.innerHTML = `
         <h3>${data.ko_name} (${data.predicted_fabric})</h3>
@@ -115,56 +109,63 @@ $btn.addEventListener("click", async () => {
       `;
 
       const classFolder = data.predicted_fabric.toLowerCase();
-      const maxImages = 6;
       const images = [];
-
-      // 존재하는 이미지 배열 가져오기
-      async function getExistingImages() {
-        const exts = ["png", "jpg"];
-        for (let i = 1; i <= maxImages; i++) {
-          for (const ext of exts) {
-            const path = `./images/${classFolder}${i}.${ext}`;
-            try {
-              const res = await fetch(path, { method: "HEAD" });
-              if (res.ok) images.push(path);
-            } catch (e) {}
-          }
-        }
+      for (let i = 1; i <= 6; i++) {
+        images.push(`./images/${classFolder}${i}.png`);
       }
 
-      await getExistingImages();
+      const links = [
+        `https://search.shopping.naver.com/search/all?query=${encodeURIComponent(data.ko_name)}`,
+        `https://www.musinsa.com/search/musinsa/integration?keyword=${encodeURIComponent(data.ko_name)}`,
+        `https://www.spao.com/product/search.html?keyword=${encodeURIComponent(data.ko_name)}`
+      ];
 
-      if (images.length > 0) {
-        const links = [
-          `https://search.shopping.naver.com/search/all?query=${encodeURIComponent(data.ko_name)}`,
-          `https://www.musinsa.com/search/musinsa/integration?keyword=${encodeURIComponent(data.ko_name)}`,
-          `https://www.spao.com/product/search.html?keyword=${encodeURIComponent(data.ko_name)}`
-        ];
+      $shopLinks.innerHTML = "";
+      const slideWrapper = document.createElement("div");
+      slideWrapper.className = "slide-wrapper";
 
-        // 이미지 겹치기 + 링크 (페이드 0.3초, 링크 하나당 이미지 2개)
-        $shopLinks.innerHTML = images.map((img, idx) => `
-          <a href="${links[Math.floor(idx / 2) % links.length]}" target="_blank" style="position:absolute; top:0; left:50%; transform:translateX(-50%); opacity:${idx === 0 ? 1 : 0}; transition: opacity 0.3s;">
-            <img src="${img}" alt="${classFolder}" style="max-width:300px; display:block; margin:0 auto;">
-          </a>
-        `).join('');
+      images.forEach((src, i) => {
+        const linkEl = document.createElement("a");
+        linkEl.href = links[i % links.length];
+        linkEl.target = "_blank";
+        const imgEl = document.createElement("img");
+        imgEl.src = src;
+        imgEl.alt = classFolder;
+        linkEl.appendChild(imgEl);
+        slideWrapper.appendChild(linkEl);
+      });
 
-        $shopLinks.style.position = "relative";
-        $shopLinks.style.height = "350px";
-        $shopLinks.style.display = "block";
-        document.getElementById("shopTitle").style.display = "block";
+      $shopLinks.appendChild(slideWrapper);
+      $shopLinks.style.display = "flex";
+      document.getElementById("shopTitle").style.display = "block";
 
-        let currentIndex = 0;
-        const linkEls = Array.from($shopLinks.querySelectorAll("a"));
+      // 슬라이드 무한 루프 (3장씩)
+      const visibleCount = 3;
+      let currentIndex = 0;
+      const total = images.length;
 
-        setInterval(() => {
-          const prevIndex = currentIndex;
-          currentIndex = (currentIndex + 1) % images.length;
-          linkEls[prevIndex].style.opacity = 0;
-          linkEls[currentIndex].style.opacity = 1;
-        }, 5000);
+      function updateSlide() {
+        const imgs = slideWrapper.querySelectorAll("img");
+        const wrapperWidth = $shopLinks.clientWidth;
+
+        const firstImg = imgs[currentIndex % total];
+        const secondImg = imgs[(currentIndex + 1) % total];
+        const thirdImg = imgs[(currentIndex + 2) % total];
+
+        const firstLeft = firstImg.offsetLeft;
+        const thirdRight = thirdImg.offsetLeft + thirdImg.clientWidth;
+
+        const offset = (firstLeft + thirdRight - wrapperWidth) / 2;
+        slideWrapper.style.transform = `translateX(${-offset}px)`;
       }
+
+      updateSlide();
+
+      setInterval(() => {
+        currentIndex = (currentIndex + visibleCount) % total;
+        updateSlide();
+      }, 5000);
     }
-
   } catch (e) {
     $result.textContent = "에러: " + e.message;
     $resultText.innerText = "에러: " + e.message;
@@ -192,7 +193,10 @@ $cameraBtn.addEventListener("click", async () => {
     $previewWrapper.appendChild($video);
 
     await new Promise(resolve => {
-      $video.onloadedmetadata = () => { $video.play(); resolve(); };
+      $video.onloadedmetadata = () => {
+        $video.play();
+        resolve();
+      };
     });
 
     $captureBtn.className = "capture-circle";
@@ -219,7 +223,6 @@ $cameraBtn.addEventListener("click", async () => {
       $scanLine.style.display = "block";
       $btn.click();
     });
-
   } catch (err) {
     alert("카메라를 사용할 수 없습니다: " + err.message);
   }
