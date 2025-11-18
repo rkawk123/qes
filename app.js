@@ -105,7 +105,7 @@ $btn.addEventListener("click", async () => {
       $result.textContent = "예측 결과를 받지 못했습니다.";
     }
 
-    // 🔹 AI 추천 이미지 슬라이드 (PNG/JPG 자동 체크)
+    // 🔹 추천 이미지 1장 + 페이드 애니메이션
     if (data.ko_name) {
       $resultText.innerHTML = `
         <h3>${data.ko_name} (${data.predicted_fabric})</h3>
@@ -118,87 +118,39 @@ $btn.addEventListener("click", async () => {
       const maxImages = 6;
       const images = [];
 
-      // 이미지 존재 여부 확인 함수
-      async function getExistingImagePath(baseName, index) {
+      // 존재하는 이미지 배열 가져오기
+      async function getExistingImages() {
         const exts = ["png", "jpg"];
-        for (const ext of exts) {
-          const path = `./images/${baseName}${index}.${ext}`;
-          try {
-            const res = await fetch(path, { method: "HEAD" });
-            if (res.ok) return path;
-          } catch (e) {}
+        for (let i = 1; i <= maxImages; i++) {
+          for (const ext of exts) {
+            const path = `./images/${classFolder}${i}.${ext}`;
+            try {
+              const res = await fetch(path, { method: "HEAD" });
+              if (res.ok) images.push(path);
+            } catch (e) {}
+          }
         }
-        return null;
       }
 
-      for (let i = 1; i <= maxImages; i++) {
-        const path = await getExistingImagePath(classFolder, i);
-        if (path) images.push(path);
+      await getExistingImages();
+
+      if (images.length > 0) {
+        $shopLinks.innerHTML = `<img src="${images[0]}" alt="${classFolder}" style="display:block; margin:0 auto; max-width:300px; transition: opacity 0.5s ease;">`;
+        $shopLinks.style.display = "block";
+        document.getElementById("shopTitle").style.display = "block";
+
+        let currentIndex = 0;
+        const imgEl = $shopLinks.querySelector("img");
+
+        setInterval(() => {
+          imgEl.style.opacity = 0;
+          setTimeout(() => {
+            currentIndex = (currentIndex + 1) % images.length;
+            imgEl.src = images[currentIndex];
+            imgEl.style.opacity = 1;
+          }, 500); // fade out 후 이미지 교체
+        }, 5000);
       }
-
-      const links = [
-        `https://search.shopping.naver.com/search/all?query=${encodeURIComponent(data.ko_name)}`,
-        `https://www.musinsa.com/search/musinsa/integration?keyword=${encodeURIComponent(data.ko_name)}`,
-        `https://www.spao.com/product/search.html?keyword=${encodeURIComponent(data.ko_name)}`
-      ];
-
-      $shopLinks.innerHTML = "";
-      const slideWrapper = document.createElement("div");
-      slideWrapper.className = "slide-wrapper";
-      slideWrapper.style.display = "flex";
-      slideWrapper.style.justifyContent = "flex-start";
-      slideWrapper.style.transition = "transform 0.5s ease"; // 애니메이션
-
-      images.forEach((src, i) => {
-        const linkEl = document.createElement("a");
-        linkEl.href = links[i % links.length];
-        linkEl.target = "_blank";
-
-        const imgEl = document.createElement("img");
-        imgEl.src = src;
-        imgEl.alt = classFolder;
-        imgEl.style.maxWidth = "200px";
-        imgEl.style.margin = "0 auto"; // 중앙 정렬
-
-        linkEl.appendChild(imgEl);
-        slideWrapper.appendChild(linkEl);
-      });
-
-      $shopLinks.appendChild(slideWrapper);
-      $shopLinks.style.display = "flex";
-      document.getElementById("shopTitle").style.display = "block";
-
-      // =========================
-      // 한 장씩 슬라이드
-      // =========================
-      let currentIndex = 0;
-      const total = images.length;
-
-      function updateSlide() {
-        const wrapperWidth = $shopLinks.clientWidth;
-        const imgEl = slideWrapper.querySelectorAll("img")[currentIndex];
-        if (!imgEl) return;
-        const imgWidth = imgEl.clientWidth;
-
-        const offset = imgEl.offsetLeft + imgWidth / 2 - wrapperWidth / 2;
-        slideWrapper.style.transform = `translateX(${-offset}px)`;
-      }
-
-      // 이미지 모두 로드 후 초기 중앙 정렬
-      const imgElements = slideWrapper.querySelectorAll("img");
-      let loadedCount = 0;
-      imgElements.forEach(img => {
-        img.onload = () => {
-          loadedCount++;
-          if (loadedCount === imgElements.length) updateSlide();
-        };
-      });
-
-      // 자동 슬라이드
-      setInterval(() => {
-        currentIndex = (currentIndex + 1) % total;
-        updateSlide();
-      }, 5000);
     }
 
   } catch (e) {
