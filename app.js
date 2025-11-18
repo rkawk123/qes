@@ -105,7 +105,7 @@ $btn.addEventListener("click", async () => {
       $result.textContent = "예측 결과를 받지 못했습니다.";
     }
 
-    // 🔹 AI 추천 이미지 (페이드 + 링크 2장씩)
+    // 🔹 추천 이미지 1장 + 링크 + 페이드 애니메이션
     if (data.ko_name) {
       $resultText.innerHTML = `
         <h3>${data.ko_name} (${data.predicted_fabric})</h3>
@@ -118,71 +118,53 @@ $btn.addEventListener("click", async () => {
       const maxImages = 6;
       const images = [];
 
-      async function getExistingImagePath(baseName, index) {
+      // 존재하는 이미지 배열 가져오기
+      async function getExistingImages() {
         const exts = ["png", "jpg"];
-        for (const ext of exts) {
-          const path = `./images/${baseName}${index}.${ext}`;
-          try {
-            const res = await fetch(path, { method: "HEAD" });
-            if (res.ok) return path;
-          } catch (e) {}
+        for (let i = 1; i <= maxImages; i++) {
+          for (const ext of exts) {
+            const path = `./images/${classFolder}${i}.${ext}`;
+            try {
+              const res = await fetch(path, { method: "HEAD" });
+              if (res.ok) images.push(path);
+            } catch (e) {}
+          }
         }
-        return null;
       }
 
-      for (let i = 1; i <= maxImages; i++) {
-        const path = await getExistingImagePath(classFolder, i);
-        if (path) images.push(path);
+      await getExistingImages();
+
+      if (images.length > 0) {
+        const links = [
+          `https://search.shopping.naver.com/search/all?query=${encodeURIComponent(data.ko_name)}`,
+          `https://www.musinsa.com/search/musinsa/integration?keyword=${encodeURIComponent(data.ko_name)}`,
+          `https://www.spao.com/product/search.html?keyword=${encodeURIComponent(data.ko_name)}`
+        ];
+
+        // 초기 이미지 + 링크
+        $shopLinks.innerHTML = `
+          <a href="${links[0]}" target="_blank">
+            <img src="${images[0]}" alt="${classFolder}" style="display:block; margin:0 auto; max-width:300px; transition: opacity 0.5s ease;">
+          </a>
+        `;
+        $shopLinks.style.display = "block";
+        document.getElementById("shopTitle").style.display = "block";
+
+        let currentIndex = 0;
+        const linkEl = $shopLinks.querySelector("a");
+        const imgEl = linkEl.querySelector("img");
+
+        setInterval(() => {
+          imgEl.style.opacity = 0;
+          setTimeout(() => {
+            currentIndex = (currentIndex + 1) % images.length;
+            imgEl.src = images[currentIndex];
+            // 이미지 두 장마다 링크 변경
+            linkEl.href = links[Math.floor(currentIndex / 2) % links.length];
+            imgEl.style.opacity = 1;
+          }, 500);
+        }, 5000);
       }
-
-      const links = [
-        `https://search.shopping.naver.com/search/all?query=${encodeURIComponent(data.ko_name)}`,
-        `https://www.musinsa.com/search/musinsa/integration?keyword=${encodeURIComponent(data.ko_name)}`,
-        `https://www.spao.com/product/search.html?keyword=${encodeURIComponent(data.ko_name)}`
-      ];
-
-      $shopLinks.innerHTML = "";
-      const fadeWrapper = document.createElement("div");
-      fadeWrapper.className = "fade-wrapper";
-      fadeWrapper.style.position = "relative";
-      fadeWrapper.style.width = "100%";
-      fadeWrapper.style.height = "auto";
-
-      images.forEach((src, i) => {
-        const linkEl = document.createElement("a");
-        linkEl.href = links[Math.floor(i / 2) % links.length]; // 링크당 2장
-        linkEl.target = "_blank";
-
-        const imgEl = document.createElement("img");
-        imgEl.src = src;
-        imgEl.alt = classFolder;
-        imgEl.style.position = "absolute";
-        imgEl.style.top = "0";
-        imgEl.style.left = "50%";
-        imgEl.style.transform = "translateX(-50%)";
-        imgEl.style.opacity = "0";
-        imgEl.style.transition = "opacity 1s ease";
-        imgEl.style.maxWidth = "100%";
-        imgEl.style.height = "auto";
-
-        linkEl.appendChild(imgEl);
-        fadeWrapper.appendChild(linkEl);
-      });
-
-      $shopLinks.appendChild(fadeWrapper);
-      $shopLinks.style.display = "block";
-      document.getElementById("shopTitle").style.display = "block";
-
-      const fadeImages = fadeWrapper.querySelectorAll("img");
-      let fadeIndex = 0;
-      if (fadeImages.length > 0) fadeImages[0].style.opacity = "1";
-
-      setInterval(() => {
-        fadeImages.forEach((img, i) => {
-          img.style.opacity = i === fadeIndex ? "1" : "0";
-        });
-        fadeIndex = (fadeIndex + 1) % fadeImages.length;
-      }, 5000);
     }
 
   } catch (e) {
