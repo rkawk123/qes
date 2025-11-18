@@ -142,14 +142,28 @@ $btn.addEventListener("click", async () => {
       $shopLinks.style.display = "flex";
       document.getElementById("shopTitle").style.display = "block";
 
-      // 슬라이드 애니메이션
-      let currentIndex = 0;
-      const total = images.length;
-      const slideWidth = 230; // 이미지 1장 너비
-      setInterval(() => {
-        currentIndex = (currentIndex + 1) % total;
-        slideWrapper.style.transform = `translateX(-${currentIndex * slideWidth}px)`;
-      }, 5000);
+    // 슬라이드 애니메이션 (중앙 기준)
+    let currentIndex = 0;
+    const total = images.length;
+
+    function updateSlide() {
+      const slideWrapper = document.querySelector(".slide-wrapper");
+      const wrapperWidth = $shopLinks.clientWidth; // visible 영역
+      const imgEl = slideWrapper.querySelectorAll("img")[currentIndex];
+      const imgWidth = imgEl.clientWidth;
+
+     // 이미지 중앙 위치 계산
+      const offset = imgEl.offsetLeft + imgWidth / 2 - wrapperWidth / 2;
+      slideWrapper.style.transform = `translateX(${-offset}px)`;
+    }
+
+    
+// 자동 슬라이드
+    setInterval(() => {
+      currentIndex = (currentIndex + 1) % total;
+      updateSlide();
+    }, 5000);
+
     }
   } catch (e) {
     $result.textContent = "에러: " + e.message;
