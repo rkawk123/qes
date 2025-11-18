@@ -115,16 +115,26 @@ $btn.addEventListener("click", async () => {
       `;
 
       const classFolder = data.predicted_fabric.toLowerCase();
-      const images = [];
       const maxImages = 6;
+      const images = [];
 
+      // 이미지 존재 여부 확인 함수
+      async function getExistingImagePath(baseName, index) {
+        const exts = ["png", "jpg"];
+        for (const ext of exts) {
+          const path = `./images/${baseName}${index}.${ext}`;
+          try {
+            const res = await fetch(path, { method: "HEAD" });
+            if (res.ok) return path;
+          } catch (e) {}
+        }
+        return null;
+      }
+
+      // 이미지 배열 생성
       for (let i = 1; i <= maxImages; i++) {
-        // 기본 PNG
-        let src = `./images/${classFolder}${i}.png`;
-        const imgTest = new Image();
-        imgTest.src = src;
-        imgTest.onerror = () => { imgTest.src = `./images/${classFolder}${i}.jpg`; };
-        images.push(imgTest.src);
+        const path = await getExistingImagePath(classFolder, i);
+        if (path) images.push(path);
       }
 
       const links = [
