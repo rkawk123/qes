@@ -141,9 +141,9 @@ $btn.addEventListener("click", async () => {
           `https://www.spao.com/product/search.html?keyword=${encodeURIComponent(data.ko_name)}`
         ];
 
-        // 이미지 겹치기 + 링크
+        // 이미지 겹치기 + 링크 (페이드 0.3초)
         $shopLinks.innerHTML = images.map((img, idx) => `
-          <a href="${links[Math.floor(idx / 2) % links.length]}" target="_blank" style="position:absolute; top:0; left:50%; transform:translateX(-50%); opacity:${idx === 0 ? 1 : 0}; transition: opacity 1s;">
+          <a href="${links[Math.floor(idx / 2) % links.length]}" target="_blank" style="position:absolute; top:0; left:50%; transform:translateX(-50%); opacity:${idx === 0 ? 1 : 0}; transition: opacity 0.3s;">
             <img src="${img}" alt="${classFolder}" style="max-width:300px; display:block; margin:0 auto;">
           </a>
         `).join('');
