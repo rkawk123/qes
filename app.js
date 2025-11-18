@@ -124,7 +124,9 @@ $btn.addEventListener("click", async () => {
       const slideWrapper = document.createElement("div");
       slideWrapper.className = "slide-wrapper";
 
-      images.forEach((src, i) => {
+      // 이미지 배열 2번 반복 → 456→123 무한 루프 가능
+      const extendedImages = [...images, ...images];
+      extendedImages.forEach((src, i) => {
         const linkEl = document.createElement("a");
         linkEl.href = links[i % links.length];
         linkEl.target = "_blank";
@@ -148,21 +150,24 @@ $btn.addEventListener("click", async () => {
         const imgs = slideWrapper.querySelectorAll("img");
         const wrapperWidth = $shopLinks.clientWidth;
 
-        const firstImg = imgs[currentIndex % total];
-        const secondImg = imgs[(currentIndex + 1) % total];
-        const thirdImg = imgs[(currentIndex + 2) % total];
+        const firstImg = imgs[currentIndex];
+        const lastImg = imgs[currentIndex + visibleCount - 1];
 
         const firstLeft = firstImg.offsetLeft;
-        const thirdRight = thirdImg.offsetLeft + thirdImg.clientWidth;
+        const lastRight = lastImg.offsetLeft + lastImg.clientWidth;
 
-        const offset = (firstLeft + thirdRight - wrapperWidth) / 2;
+        const offset = (firstLeft + lastRight - wrapperWidth) / 2;
         slideWrapper.style.transform = `translateX(${-offset}px)`;
       }
 
       updateSlide();
 
       setInterval(() => {
-        currentIndex = (currentIndex + visibleCount) % total;
+        currentIndex += visibleCount;
+        if (currentIndex >= total * 2 - visibleCount) {
+          // 맨 끝에 도달하면 첫 번째 이미지로 바로 jump → 무한 루프처럼 보임
+          currentIndex = 0;
+        }
         updateSlide();
       }, 5000);
     }
