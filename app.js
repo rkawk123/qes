@@ -105,7 +105,7 @@ $btn.addEventListener("click", async () => {
       $result.textContent = "예측 결과를 받지 못했습니다.";
     }
 
-    // 🔹 추천 이미지 1장 + 링크 + 페이드 애니메이션
+    // 🔹 추천 이미지 1장 + 링크 + 부드러운 페이드
     if (data.ko_name) {
       $resultText.innerHTML = `
         <h3>${data.ko_name} (${data.predicted_fabric})</h3>
@@ -141,28 +141,26 @@ $btn.addEventListener("click", async () => {
           `https://www.spao.com/product/search.html?keyword=${encodeURIComponent(data.ko_name)}`
         ];
 
-        // 초기 이미지 + 링크
-        $shopLinks.innerHTML = `
-          <a href="${links[0]}" target="_blank">
-            <img src="${images[0]}" alt="${classFolder}" style="display:block; margin:0 auto; max-width:300px; transition: opacity 0.5s ease;">
+        // 이미지 겹치기 + 링크
+        $shopLinks.innerHTML = images.map((img, idx) => `
+          <a href="${links[Math.floor(idx / 2) % links.length]}" target="_blank" style="position:absolute; top:0; left:50%; transform:translateX(-50%); opacity:${idx === 0 ? 1 : 0}; transition: opacity 1s;">
+            <img src="${img}" alt="${classFolder}" style="max-width:300px; display:block; margin:0 auto;">
           </a>
-        `;
+        `).join('');
+
+        $shopLinks.style.position = "relative";
+        $shopLinks.style.height = "350px";
         $shopLinks.style.display = "block";
         document.getElementById("shopTitle").style.display = "block";
 
         let currentIndex = 0;
-        const linkEl = $shopLinks.querySelector("a");
-        const imgEl = linkEl.querySelector("img");
+        const linkEls = Array.from($shopLinks.querySelectorAll("a"));
 
         setInterval(() => {
-          imgEl.style.opacity = 0;
-          setTimeout(() => {
-            currentIndex = (currentIndex + 1) % images.length;
-            imgEl.src = images[currentIndex];
-            // 이미지 두 장마다 링크 변경
-            linkEl.href = links[Math.floor(currentIndex / 2) % links.length];
-            imgEl.style.opacity = 1;
-          }, 500);
+          const prevIndex = currentIndex;
+          currentIndex = (currentIndex + 1) % images.length;
+          linkEls[prevIndex].style.opacity = 0;
+          linkEls[currentIndex].style.opacity = 1;
         }, 5000);
       }
     }
