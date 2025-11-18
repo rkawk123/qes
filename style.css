@@ -683,7 +683,7 @@ h1 {
   gap: 40px; /* 이미지 간격 */
   margin-top: 20px;
 }
-/*
+
 .shop-links a {
   display: block;
   text-decoration: none;
@@ -699,45 +699,11 @@ h1 {
   transition: transform 0.3s ease, box-shadow 0.3s ease;
   filter: none; /* 흑백 제거 */
 }
-*/
-/* 슬라이드 전체 컨테이너 */
-#shopLinks {
-  overflow: hidden;        /* 슬라이드 영역 밖 이미지 숨김 */
-  width: 230px;            /* 한 장만 보이도록 고정 */
-  height: 230px;           /* 이미지 높이에 맞춤 */
-  display: flex;
-  justify-content: center; /* 항상 가운데 정렬 */
-  align-items: center;
-  position: relative;
-  margin: 0 auto;          /* 가운데 정렬 */
-}
 
-/* 이미지 묶음(wrapper) */
-.slide-wrapper {
-  display: flex;
-  position: absolute;      /* 이동 가능하게 */
-  top: 0;
-  left: 0;
-  transition: transform 0.8s ease-in-out; /* 부드러운 이동 */
-}
-
-/* 개별 이미지 */
-.slide-wrapper img {
-  height: 230px;           /* 이미지 고정 높이 */
-  width: auto;             /* 비율 유지 */
-  flex-shrink: 0;          /* 줄어들지 않게 */
-  border-radius: 10px;
-  object-fit: contain;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-  margin: 0;               /* 간격 제거 */
-}
-
-.slide-wrapper img:hover {
-  transform: scale(1.05);
+.shop-links img:hover {
+  transform: scale(1.1);
   box-shadow: 0 6px 12px rgba(0,0,0,0.2);
 }
-
-
 
 /* 푸터 */
 .footer {
