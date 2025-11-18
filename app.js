@@ -105,7 +105,7 @@ $btn.addEventListener("click", async () => {
       $result.textContent = "예측 결과를 받지 못했습니다.";
     }
 
-    // 🔹 AI 추천 이미지 단일 페이드 (PNG/JPG 자동 체크, 링크 유지)
+    // 🔹 AI 추천 이미지 (페이드 전환)
     if (data.ko_name) {
       $resultText.innerHTML = `
         <h3>${data.ko_name} (${data.predicted_fabric})</h3>
@@ -142,46 +142,46 @@ $btn.addEventListener("click", async () => {
       ];
 
       $shopLinks.innerHTML = "";
-      const fadeWrapper = document.createElement("div");
-      fadeWrapper.className = "fade-wrapper";
-      fadeWrapper.style.position = "relative";
-      fadeWrapper.style.width = "100%";
-      fadeWrapper.style.height = "300px";
-      fadeWrapper.style.overflow = "hidden";
 
-      images.forEach((src, i) => {
-        const linkEl = document.createElement("a");
-        linkEl.href = links[i % links.length];
-        linkEl.target = "_blank";
-        linkEl.style.position = "absolute";
-        linkEl.style.top = "50%";
-        linkEl.style.left = "50%";
-        linkEl.style.transform = "translate(-50%, -50%)";
-        linkEl.style.transition = "opacity 1s";
-        linkEl.style.opacity = i === 0 ? "1" : "0";
+      // 이미지 & 링크 할당
+      const imgEl = document.createElement("img");
+      imgEl.style.maxWidth = "300px";
+      imgEl.style.maxHeight = "300px";
+      imgEl.style.display = "block";
+      imgEl.style.margin = "0 auto";
+      imgEl.style.transition = "opacity 1s";
+      imgEl.style.opacity = 0;
+      $shopLinks.appendChild(imgEl);
 
-        const imgEl = document.createElement("img");
-        imgEl.src = src;
-        imgEl.alt = classFolder;
-        imgEl.style.maxWidth = "100%";
-        imgEl.style.maxHeight = "100%";
-        imgEl.style.display = "block";
-
-        linkEl.appendChild(imgEl);
-        fadeWrapper.appendChild(linkEl);
-      });
-
-      $shopLinks.appendChild(fadeWrapper);
-      $shopLinks.style.display = "flex";
       document.getElementById("shopTitle").style.display = "block";
 
       let currentIndex = 0;
+      function showImage(index) {
+        const linkIndex = Math.floor(index / 2) % links.length;
+        const linkURL = links[linkIndex];
+
+        imgEl.style.opacity = 0;
+        setTimeout(() => {
+          imgEl.src = images[index];
+          if (!imgEl.parentElement || imgEl.parentElement.tagName !== "A") {
+            const linkWrapper = document.createElement("a");
+            linkWrapper.href = linkURL;
+            linkWrapper.target = "_blank";
+            $shopLinks.innerHTML = "";
+            linkWrapper.appendChild(imgEl);
+            $shopLinks.appendChild(linkWrapper);
+          } else {
+            imgEl.parentElement.href = linkURL;
+          }
+          imgEl.style.opacity = 1;
+        }, 300);
+      }
+
+      showImage(currentIndex);
+
       setInterval(() => {
-        const linkEls = fadeWrapper.querySelectorAll("a");
-        linkEls.forEach((el, i) => {
-          el.style.opacity = i === currentIndex ? "1" : "0";
-        });
         currentIndex = (currentIndex + 1) % images.length;
+        showImage(currentIndex);
       }, 5000);
     }
 
