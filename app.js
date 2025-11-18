@@ -105,7 +105,7 @@ $btn.addEventListener("click", async () => {
       $result.textContent = "예측 결과를 받지 못했습니다.";
     }
 
-    // 🔹 추천 이미지 1장 + 페이드 애니메이션
+    // 🔹 AI 추천 이미지 단일 페이드 (PNG/JPG 자동 체크, 링크 유지)
     if (data.ko_name) {
       $resultText.innerHTML = `
         <h3>${data.ko_name} (${data.predicted_fabric})</h3>
@@ -118,39 +118,71 @@ $btn.addEventListener("click", async () => {
       const maxImages = 6;
       const images = [];
 
-      // 존재하는 이미지 배열 가져오기
-      async function getExistingImages() {
+      async function getExistingImagePath(baseName, index) {
         const exts = ["png", "jpg"];
-        for (let i = 1; i <= maxImages; i++) {
-          for (const ext of exts) {
-            const path = `./images/${classFolder}${i}.${ext}`;
-            try {
-              const res = await fetch(path, { method: "HEAD" });
-              if (res.ok) images.push(path);
-            } catch (e) {}
-          }
+        for (const ext of exts) {
+          const path = `./images/${baseName}${index}.${ext}`;
+          try {
+            const res = await fetch(path, { method: "HEAD" });
+            if (res.ok) return path;
+          } catch (e) {}
         }
+        return null;
       }
 
-      await getExistingImages();
-
-      if (images.length > 0) {
-        $shopLinks.innerHTML = `<img src="${images[0]}" alt="${classFolder}" style="display:block; margin:0 auto; max-width:300px; transition: opacity 0.5s ease;">`;
-        $shopLinks.style.display = "block";
-        document.getElementById("shopTitle").style.display = "block";
-
-        let currentIndex = 0;
-        const imgEl = $shopLinks.querySelector("img");
-
-        setInterval(() => {
-          imgEl.style.opacity = 0;
-          setTimeout(() => {
-            currentIndex = (currentIndex + 1) % images.length;
-            imgEl.src = images[currentIndex];
-            imgEl.style.opacity = 1;
-          }, 500); // fade out 후 이미지 교체
-        }, 5000);
+      for (let i = 1; i <= maxImages; i++) {
+        const path = await getExistingImagePath(classFolder, i);
+        if (path) images.push(path);
       }
+
+      const links = [
+        `https://search.shopping.naver.com/search/all?query=${encodeURIComponent(data.ko_name)}`,
+        `https://www.musinsa.com/search/musinsa/integration?keyword=${encodeURIComponent(data.ko_name)}`,
+        `https://www.spao.com/product/search.html?keyword=${encodeURIComponent(data.ko_name)}`
+      ];
+
+      $shopLinks.innerHTML = "";
+      const fadeWrapper = document.createElement("div");
+      fadeWrapper.className = "fade-wrapper";
+      fadeWrapper.style.position = "relative";
+      fadeWrapper.style.width = "100%";
+      fadeWrapper.style.height = "300px";
+      fadeWrapper.style.overflow = "hidden";
+
+      images.forEach((src, i) => {
+        const linkEl = document.createElement("a");
+        linkEl.href = links[i % links.length];
+        linkEl.target = "_blank";
+        linkEl.style.position = "absolute";
+        linkEl.style.top = "50%";
+        linkEl.style.left = "50%";
+        linkEl.style.transform = "translate(-50%, -50%)";
+        linkEl.style.transition = "opacity 1s";
+        linkEl.style.opacity = i === 0 ? "1" : "0";
+
+        const imgEl = document.createElement("img");
+        imgEl.src = src;
+        imgEl.alt = classFolder;
+        imgEl.style.maxWidth = "100%";
+        imgEl.style.maxHeight = "100%";
+        imgEl.style.display = "block";
+
+        linkEl.appendChild(imgEl);
+        fadeWrapper.appendChild(linkEl);
+      });
+
+      $shopLinks.appendChild(fadeWrapper);
+      $shopLinks.style.display = "flex";
+      document.getElementById("shopTitle").style.display = "block";
+
+      let currentIndex = 0;
+      setInterval(() => {
+        const linkEls = fadeWrapper.querySelectorAll("a");
+        linkEls.forEach((el, i) => {
+          el.style.opacity = i === currentIndex ? "1" : "0";
+        });
+        currentIndex = (currentIndex + 1) % images.length;
+      }, 5000);
     }
 
   } catch (e) {
