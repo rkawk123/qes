@@ -23,6 +23,7 @@ const $shopLinks = document.getElementById("shopLinks");
     $dropArea.classList.add("highlight");
   });
 });
+
 ["dragleave", "drop"].forEach(eventName => {
   $dropArea.addEventListener(eventName, e => {
     e.preventDefault();
@@ -30,6 +31,7 @@ const $shopLinks = document.getElementById("shopLinks");
     $dropArea.classList.remove("highlight");
   });
 });
+
 $dropArea.addEventListener("drop", e => {
   const files = e.dataTransfer.files;
   if (files.length > 0) {
@@ -38,6 +40,7 @@ $dropArea.addEventListener("drop", e => {
     showPreview(files[0]);
   }
 });
+
 $file.addEventListener("change", () => {
   if ($file.files.length > 0) {
     document.getElementById("shopTitle").style.display = "none";
@@ -142,8 +145,7 @@ $btn.addEventListener("click", async () => {
       // 슬라이드 애니메이션
       let currentIndex = 0;
       const total = images.length;
-      const slideWidth = 230; // 이미지 한 장 너비
-
+      const slideWidth = 230; // 이미지 1장 너비
       setInterval(() => {
         currentIndex = (currentIndex + 1) % total;
         slideWrapper.style.transform = `translateX(-${currentIndex * slideWidth}px)`;
@@ -212,7 +214,7 @@ $cameraBtn.addEventListener("click", async () => {
   }
 });
 
-// 5분마다 서버 ping
+// 5분마다 서버에 ping
 setInterval(async () => {
   try {
     const res = await fetch("https://backend-6i2t.onrender.com/ping");
