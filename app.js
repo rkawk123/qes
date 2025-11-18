@@ -64,6 +64,30 @@ function showPreview(fileOrBlob) {
   reader.readAsDataURL(fileOrBlob);
 }
 
+// 이미지 생성 함수 (png/jpg/jpeg 자동 감지)
+function createImageElement(srcBase, index) {
+  const imgEl = document.createElement("img");
+  imgEl.alt = "";
+
+  const exts = [".png", ".jpg", ".jpeg"];
+  let loaded = false;
+
+  exts.forEach(ext => {
+    if (!loaded) {
+      imgEl.src = `${srcBase}${index}${ext}`;
+      imgEl.onerror = () => {};
+      imgEl.onload = () => { loaded = true; };
+    }
+  });
+
+  // 이미지 크기 조절
+  imgEl.style.maxWidth = "120px";
+  imgEl.style.height = "auto";
+  imgEl.style.margin = "0 5px";
+
+  return imgEl;
+}
+
 // 서버 업로드 및 예측
 $btn.addEventListener("click", async () => {
   let uploadFile = $file.files[0] || $file._cameraBlob;
@@ -111,7 +135,7 @@ $btn.addEventListener("click", async () => {
       const classFolder = data.predicted_fabric.toLowerCase();
       const images = [];
       for (let i = 1; i <= 6; i++) {
-        images.push(`./images/${classFolder}${i}.png`);
+        images.push(createImageElement(`./images/${classFolder}`, i));
       }
 
       const links = [
@@ -124,22 +148,11 @@ $btn.addEventListener("click", async () => {
       const slideWrapper = document.createElement("div");
       slideWrapper.className = "slide-wrapper";
 
-      // 이미지 배열 2번 반복 → 456→123 무한 루프
-      const extendedImages = [...images, ...images];
-      extendedImages.forEach((src, i) => {
+      // 링크 포함해서 슬라이드 생성
+      images.forEach((imgEl, i) => {
         const linkEl = document.createElement("a");
         linkEl.href = links[i % links.length];
         linkEl.target = "_blank";
-
-        const imgEl = document.createElement("img");
-        imgEl.src = src;
-        imgEl.alt = classFolder;
-
-        // 이미지 크기 조절
-        imgEl.style.maxWidth = "120px"; // 크기 조정 가능
-        imgEl.style.height = "auto";
-        imgEl.style.margin = "0 5px"; // 간격
-
         linkEl.appendChild(imgEl);
         slideWrapper.appendChild(linkEl);
       });
@@ -148,7 +161,7 @@ $btn.addEventListener("click", async () => {
       $shopLinks.style.display = "flex";
       document.getElementById("shopTitle").style.display = "block";
 
-      // 슬라이드 무한 루프 (3장씩, 중앙 이미지 기준 정렬)
+      // 슬라이드 무한 루프 (3장씩, 중앙 이미지 기준)
       const visibleCount = 3;
       let currentIndex = 0;
       const total = images.length;
@@ -156,10 +169,8 @@ $btn.addEventListener("click", async () => {
       function updateSlide() {
         const imgs = slideWrapper.querySelectorAll("img");
         const wrapperWidth = $shopLinks.clientWidth;
-
-        const centerIndex = currentIndex + 1; // 3장 중 가운데 이미지
+        const centerIndex = currentIndex + 1; // 3장 중 가운데
         const centerImg = imgs[centerIndex];
-
         const offset = centerImg.offsetLeft + centerImg.clientWidth / 2 - wrapperWidth / 2;
         slideWrapper.style.transform = `translateX(${-offset}px)`;
       }
@@ -168,9 +179,7 @@ $btn.addEventListener("click", async () => {
 
       setInterval(() => {
         currentIndex += visibleCount;
-        if (currentIndex >= total * 2 - visibleCount) {
-          currentIndex = 0;
-        }
+        if (currentIndex >= total) currentIndex = 0;
         updateSlide();
       }, 5000);
     }
