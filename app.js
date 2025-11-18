@@ -23,7 +23,6 @@ const $shopLinks = document.getElementById("shopLinks");
     $dropArea.classList.add("highlight");
   });
 });
-
 ["dragleave", "drop"].forEach(eventName => {
   $dropArea.addEventListener(eventName, e => {
     e.preventDefault();
@@ -48,44 +47,27 @@ $file.addEventListener("change", () => {
   }
 });
 
+// 미리보기
 function showPreview(fileOrBlob) {
+  if (!fileOrBlob) return;
   const reader = new FileReader();
   reader.onload = e => {
+    const dataURL = e.target.result;
+    if (!dataURL) return;
+
+    $preview.src = dataURL;
+    $preview.style.display = "block";
     $preview.onload = () => {
       $scanLine.style.width = $preview.clientWidth + "px";
       $scanLine.style.left = $preview.offsetLeft + "px";
     };
-    $preview.src = e.target.result;
+
     $result.textContent = "";
     $resultText.innerHTML = "";
     $shopLinks.style.display = "none";
     document.getElementById("shopTitle").style.display = "none";
   };
   reader.readAsDataURL(fileOrBlob);
-}
-
-// 이미지 생성 함수 (png/jpg/jpeg 자동 감지)
-function createImageElement(srcBase, index) {
-  const imgEl = document.createElement("img");
-  imgEl.alt = "";
-
-  const exts = [".png", ".jpg", ".jpeg"];
-  let loaded = false;
-
-  exts.forEach(ext => {
-    if (!loaded) {
-      imgEl.src = `${srcBase}${index}${ext}`;
-      imgEl.onerror = () => {};
-      imgEl.onload = () => { loaded = true; };
-    }
-  });
-
-  // 이미지 크기 조절
-  imgEl.style.maxWidth = "120px";
-  imgEl.style.height = "auto";
-  imgEl.style.margin = "0 5px";
-
-  return imgEl;
 }
 
 // 서버 업로드 및 예측
@@ -123,7 +105,7 @@ $btn.addEventListener("click", async () => {
       $result.textContent = "예측 결과를 받지 못했습니다.";
     }
 
-    // 🔹 AI 추천 이미지 슬라이드
+    // 🔹 AI 추천 이미지 슬라이드 (PNG/JPG 자동 체크)
     if (data.ko_name) {
       $resultText.innerHTML = `
         <h3>${data.ko_name} (${data.predicted_fabric})</h3>
@@ -133,9 +115,26 @@ $btn.addEventListener("click", async () => {
       `;
 
       const classFolder = data.predicted_fabric.toLowerCase();
+      const maxImages = 6;
       const images = [];
-      for (let i = 1; i <= 6; i++) {
-        images.push(createImageElement(`./images/${classFolder}`, i));
+
+      // 이미지 존재 여부 확인 함수
+      async function getExistingImagePath(baseName, index) {
+        const exts = ["png", "jpg"];
+        for (const ext of exts) {
+          const path = `./images/${baseName}${index}.${ext}`;
+          try {
+            const res = await fetch(path, { method: "HEAD" });
+            if (res.ok) return path;
+          } catch (e) {}
+        }
+        return null;
+      }
+
+      // 이미지 배열 생성
+      for (let i = 1; i <= maxImages; i++) {
+        const path = await getExistingImagePath(classFolder, i);
+        if (path) images.push(path);
       }
 
       const links = [
@@ -148,11 +147,15 @@ $btn.addEventListener("click", async () => {
       const slideWrapper = document.createElement("div");
       slideWrapper.className = "slide-wrapper";
 
-      // 링크 포함해서 슬라이드 생성
-      images.forEach((imgEl, i) => {
+      images.forEach((src, i) => {
         const linkEl = document.createElement("a");
         linkEl.href = links[i % links.length];
         linkEl.target = "_blank";
+
+        const imgEl = document.createElement("img");
+        imgEl.src = src;
+        imgEl.alt = classFolder;
+
         linkEl.appendChild(imgEl);
         slideWrapper.appendChild(linkEl);
       });
@@ -161,28 +164,35 @@ $btn.addEventListener("click", async () => {
       $shopLinks.style.display = "flex";
       document.getElementById("shopTitle").style.display = "block";
 
-      // 슬라이드 무한 루프 (3장씩, 중앙 이미지 기준)
-      const visibleCount = 3;
+      // 슬라이드 애니메이션
       let currentIndex = 0;
       const total = images.length;
 
       function updateSlide() {
-        const imgs = slideWrapper.querySelectorAll("img");
+        const slideWrapper = document.querySelector(".slide-wrapper");
         const wrapperWidth = $shopLinks.clientWidth;
-        const centerIndex = currentIndex + 1; // 3장 중 가운데
-        const centerImg = imgs[centerIndex];
-        const offset = centerImg.offsetLeft + centerImg.clientWidth / 2 - wrapperWidth / 2;
+        const imgEl = slideWrapper.querySelectorAll("img")[currentIndex];
+        if (!imgEl) return;
+        const imgWidth = imgEl.clientWidth;
+        const offset = imgEl.offsetLeft + imgWidth / 2 - wrapperWidth / 2;
         slideWrapper.style.transform = `translateX(${-offset}px)`;
       }
 
-      updateSlide();
+      const imgElements = slideWrapper.querySelectorAll("img");
+      let loadedCount = 0;
+      imgElements.forEach(img => {
+        img.onload = () => {
+          loadedCount++;
+          if (loadedCount === imgElements.length) updateSlide();
+        };
+      });
 
       setInterval(() => {
-        currentIndex += visibleCount;
-        if (currentIndex >= total) currentIndex = 0;
+        currentIndex = (currentIndex + 1) % total;
         updateSlide();
       }, 5000);
     }
+
   } catch (e) {
     $result.textContent = "에러: " + e.message;
     $resultText.innerText = "에러: " + e.message;
@@ -210,10 +220,7 @@ $cameraBtn.addEventListener("click", async () => {
     $previewWrapper.appendChild($video);
 
     await new Promise(resolve => {
-      $video.onloadedmetadata = () => {
-        $video.play();
-        resolve();
-      };
+      $video.onloadedmetadata = () => { $video.play(); resolve(); };
     });
 
     $captureBtn.className = "capture-circle";
@@ -240,6 +247,7 @@ $cameraBtn.addEventListener("click", async () => {
       $scanLine.style.display = "block";
       $btn.click();
     });
+
   } catch (err) {
     alert("카메라를 사용할 수 없습니다: " + err.message);
   }
