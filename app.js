@@ -47,14 +47,21 @@ $file.addEventListener("change", () => {
   }
 });
 
+// 미리보기
 function showPreview(fileOrBlob) {
+  if (!fileOrBlob) return;
   const reader = new FileReader();
   reader.onload = e => {
+    const dataURL = e.target.result;
+    if (!dataURL) return;
+
+    $preview.src = dataURL;
+    $preview.style.display = "block";
     $preview.onload = () => {
       $scanLine.style.width = $preview.clientWidth + "px";
       $scanLine.style.left = $preview.offsetLeft + "px";
     };
-    $preview.src = e.target.result;
+
     $result.textContent = "";
     $resultText.innerHTML = "";
     $shopLinks.style.display = "none";
@@ -98,7 +105,7 @@ $btn.addEventListener("click", async () => {
       $result.textContent = "예측 결과를 받지 못했습니다.";
     }
 
-    // 🔹 AI 추천 이미지 슬라이드
+    // 🔹 AI 추천 이미지 슬라이드 (PNG/JPG 자동 체크)
     if (data.ko_name) {
       $resultText.innerHTML = `
         <h3>${data.ko_name} (${data.predicted_fabric})</h3>
@@ -109,8 +116,15 @@ $btn.addEventListener("click", async () => {
 
       const classFolder = data.predicted_fabric.toLowerCase();
       const images = [];
-      for (let i = 1; i <= 6; i++) {
-        images.push(`./images/${classFolder}${i}.png`);
+      const maxImages = 6;
+
+      for (let i = 1; i <= maxImages; i++) {
+        // 기본 PNG
+        let src = `./images/${classFolder}${i}.png`;
+        const imgTest = new Image();
+        imgTest.src = src;
+        imgTest.onerror = () => { imgTest.src = `./images/${classFolder}${i}.jpg`; };
+        images.push(imgTest.src);
       }
 
       const links = [
@@ -140,7 +154,7 @@ $btn.addEventListener("click", async () => {
       $shopLinks.style.display = "flex";
       document.getElementById("shopTitle").style.display = "block";
 
-      // 슬라이드 애니메이션 (중앙 기준, 무한 루프)
+      // 슬라이드 애니메이션
       let currentIndex = 0;
       const total = images.length;
 
@@ -154,24 +168,21 @@ $btn.addEventListener("click", async () => {
         slideWrapper.style.transform = `translateX(${-offset}px)`;
       }
 
-      // 모든 이미지 로드 후 초기 중앙 정렬
       const imgElements = slideWrapper.querySelectorAll("img");
       let loadedCount = 0;
       imgElements.forEach(img => {
         img.onload = () => {
           loadedCount++;
-          if (loadedCount === imgElements.length) {
-            updateSlide();
-          }
+          if (loadedCount === imgElements.length) updateSlide();
         };
       });
 
-      // 자동 슬라이드
       setInterval(() => {
         currentIndex = (currentIndex + 1) % total;
         updateSlide();
       }, 5000);
     }
+
   } catch (e) {
     $result.textContent = "에러: " + e.message;
     $resultText.innerText = "에러: " + e.message;
@@ -199,10 +210,7 @@ $cameraBtn.addEventListener("click", async () => {
     $previewWrapper.appendChild($video);
 
     await new Promise(resolve => {
-      $video.onloadedmetadata = () => {
-        $video.play();
-        resolve();
-      };
+      $video.onloadedmetadata = () => { $video.play(); resolve(); };
     });
 
     $captureBtn.className = "capture-circle";
@@ -229,12 +237,13 @@ $cameraBtn.addEventListener("click", async () => {
       $scanLine.style.display = "block";
       $btn.click();
     });
+
   } catch (err) {
     alert("카메라를 사용할 수 없습니다: " + err.message);
   }
 });
 
-// 5분마다 서버에 ping
+// 5분마다 서버 ping
 setInterval(async () => {
   try {
     const res = await fetch("https://backend-6i2t.onrender.com/ping");
