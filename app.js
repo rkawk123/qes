@@ -124,15 +124,22 @@ $btn.addEventListener("click", async () => {
       const slideWrapper = document.createElement("div");
       slideWrapper.className = "slide-wrapper";
 
-      // 이미지 배열 2번 반복 → 456→123 무한 루프 가능
+      // 이미지 배열 2번 반복 → 456→123 무한 루프
       const extendedImages = [...images, ...images];
       extendedImages.forEach((src, i) => {
         const linkEl = document.createElement("a");
         linkEl.href = links[i % links.length];
         linkEl.target = "_blank";
+
         const imgEl = document.createElement("img");
         imgEl.src = src;
         imgEl.alt = classFolder;
+
+        // 이미지 크기 조절
+        imgEl.style.maxWidth = "120px"; // 크기 조정 가능
+        imgEl.style.height = "auto";
+        imgEl.style.margin = "0 5px"; // 간격
+
         linkEl.appendChild(imgEl);
         slideWrapper.appendChild(linkEl);
       });
@@ -141,7 +148,7 @@ $btn.addEventListener("click", async () => {
       $shopLinks.style.display = "flex";
       document.getElementById("shopTitle").style.display = "block";
 
-      // 슬라이드 무한 루프 (3장씩)
+      // 슬라이드 무한 루프 (3장씩, 중앙 이미지 기준 정렬)
       const visibleCount = 3;
       let currentIndex = 0;
       const total = images.length;
@@ -150,13 +157,10 @@ $btn.addEventListener("click", async () => {
         const imgs = slideWrapper.querySelectorAll("img");
         const wrapperWidth = $shopLinks.clientWidth;
 
-        const firstImg = imgs[currentIndex];
-        const lastImg = imgs[currentIndex + visibleCount - 1];
+        const centerIndex = currentIndex + 1; // 3장 중 가운데 이미지
+        const centerImg = imgs[centerIndex];
 
-        const firstLeft = firstImg.offsetLeft;
-        const lastRight = lastImg.offsetLeft + lastImg.clientWidth;
-
-        const offset = (firstLeft + lastRight - wrapperWidth) / 2;
+        const offset = centerImg.offsetLeft + centerImg.clientWidth / 2 - wrapperWidth / 2;
         slideWrapper.style.transform = `translateX(${-offset}px)`;
       }
 
@@ -165,7 +169,6 @@ $btn.addEventListener("click", async () => {
       setInterval(() => {
         currentIndex += visibleCount;
         if (currentIndex >= total * 2 - visibleCount) {
-          // 맨 끝에 도달하면 첫 번째 이미지로 바로 jump → 무한 루프처럼 보임
           currentIndex = 0;
         }
         updateSlide();
