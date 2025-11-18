@@ -131,7 +131,6 @@ $btn.addEventListener("click", async () => {
         return null;
       }
 
-      // 이미지 배열 생성
       for (let i = 1; i <= maxImages; i++) {
         const path = await getExistingImagePath(classFolder, i);
         if (path) images.push(path);
@@ -146,6 +145,9 @@ $btn.addEventListener("click", async () => {
       $shopLinks.innerHTML = "";
       const slideWrapper = document.createElement("div");
       slideWrapper.className = "slide-wrapper";
+      slideWrapper.style.display = "flex";
+      slideWrapper.style.justifyContent = "flex-start";
+      slideWrapper.style.transition = "transform 0.5s ease"; // 애니메이션
 
       images.forEach((src, i) => {
         const linkEl = document.createElement("a");
@@ -155,6 +157,8 @@ $btn.addEventListener("click", async () => {
         const imgEl = document.createElement("img");
         imgEl.src = src;
         imgEl.alt = classFolder;
+        imgEl.style.maxWidth = "200px";
+        imgEl.style.margin = "0 auto"; // 중앙 정렬
 
         linkEl.appendChild(imgEl);
         slideWrapper.appendChild(linkEl);
@@ -164,20 +168,23 @@ $btn.addEventListener("click", async () => {
       $shopLinks.style.display = "flex";
       document.getElementById("shopTitle").style.display = "block";
 
-      // 슬라이드 애니메이션
+      // =========================
+      // 한 장씩 슬라이드
+      // =========================
       let currentIndex = 0;
       const total = images.length;
 
       function updateSlide() {
-        const slideWrapper = document.querySelector(".slide-wrapper");
         const wrapperWidth = $shopLinks.clientWidth;
         const imgEl = slideWrapper.querySelectorAll("img")[currentIndex];
         if (!imgEl) return;
         const imgWidth = imgEl.clientWidth;
+
         const offset = imgEl.offsetLeft + imgWidth / 2 - wrapperWidth / 2;
         slideWrapper.style.transform = `translateX(${-offset}px)`;
       }
 
+      // 이미지 모두 로드 후 초기 중앙 정렬
       const imgElements = slideWrapper.querySelectorAll("img");
       let loadedCount = 0;
       imgElements.forEach(img => {
@@ -187,6 +194,7 @@ $btn.addEventListener("click", async () => {
         };
       });
 
+      // 자동 슬라이드
       setInterval(() => {
         currentIndex = (currentIndex + 1) % total;
         updateSlide();
