@@ -157,7 +157,9 @@ $btn.addEventListener("click", async () => {
       slideWrapper.style.transform = `translateX(${-offset}px)`;
     }
 
-    
+    // 초기 위치
+    updateSlide();
+
 // 자동 슬라이드
     setInterval(() => {
       currentIndex = (currentIndex + 1) % total;
