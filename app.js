@@ -124,6 +124,10 @@ $btn.addEventListener("click", async () => {
 
       const slideWrapper = document.createElement("div");
       slideWrapper.className = "slide-wrapper";
+      slideWrapper.style.display = "flex";
+      slideWrapper.style.transition = "transform 0.5s ease";
+
+      const imgEls = [];
 
       images.forEach((src, i) => {
         const linkEl = document.createElement("a");
@@ -133,39 +137,49 @@ $btn.addEventListener("click", async () => {
         const imgEl = document.createElement("img");
         imgEl.src = src;
         imgEl.alt = classFolder;
+        imgEl.style.marginRight = "20px"; // 이미지 간격
+        imgEls.push(imgEl);
 
         linkEl.appendChild(imgEl);
         slideWrapper.appendChild(linkEl);
       });
 
+      // 첫 이미지 복제 후 마지막에 붙여 무한루프 효과
+      const firstClone = imgEls[0].cloneNode(true);
+      slideWrapper.appendChild(firstClone);
+
       $shopLinks.appendChild(slideWrapper);
       $shopLinks.style.display = "flex";
       document.getElementById("shopTitle").style.display = "block";
 
-    // 슬라이드 애니메이션 (중앙 기준)
-    let currentIndex = 0;
-    const total = images.length;
+      let currentIndex = 0;
+      const total = imgEls.length;
+      const wrapperWidth = $shopLinks.clientWidth;
 
-    function updateSlide() {
-      const slideWrapper = document.querySelector(".slide-wrapper");
-      const wrapperWidth = $shopLinks.clientWidth; // visible 영역
-      const imgEl = slideWrapper.querySelectorAll("img")[currentIndex];
-      const imgWidth = imgEl.clientWidth;
+      function updateSlide() {
+        const imgEl = slideWrapper.querySelectorAll("img")[currentIndex];
+        const imgWidth = imgEl.clientWidth;
+        const offset = imgEl.offsetLeft + imgWidth / 2 - wrapperWidth / 2;
+        slideWrapper.style.transform = `translateX(${-offset}px)`;
+      }
 
-     // 이미지 중앙 위치 계산
-      const offset = imgEl.offsetLeft + imgWidth / 2 - wrapperWidth / 2;
-      slideWrapper.style.transform = `translateX(${-offset}px)`;
-    }
-
-    // 초기 위치
-    updateSlide();
-
-// 자동 슬라이드
-    setInterval(() => {
-      currentIndex = (currentIndex + 1) % total;
+      // 초기 위치
       updateSlide();
-    }, 5000);
 
+      // 자동 슬라이드 (무한 루프)
+      setInterval(() => {
+        currentIndex++;
+        updateSlide();
+
+        if (currentIndex > total) { // 마지막 이미지 다음에는 첫 이미지로 점프
+          setTimeout(() => {
+            slideWrapper.style.transition = "none"; // transition 끄기
+            currentIndex = 0;
+            updateSlide();
+            setTimeout(() => slideWrapper.style.transition = "transform 0.5s ease", 50); // transition 복원
+          }, 500); // 기존 transition 끝난 후 실행
+        }
+      }, 5000);
     }
   } catch (e) {
     $result.textContent = "에러: " + e.message;
