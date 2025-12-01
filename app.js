@@ -421,7 +421,6 @@ function showPreview(fileOrBlob) {
 // 버튼 클릭 핸들러
 $btn.addEventListener("click", async () => {
   const uploadFile = $file.files?.[0] || $file._cameraBlob;
-
   if (!uploadFile) {
     alert("이미지를 선택하거나 촬영하세요!");
     return;
@@ -712,27 +711,7 @@ async function startCamera() {
   }
 }
 // 촬영 버튼 클릭 → startCamera 실행
-function isMobile() {
-  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-}
-
-$cameraBtn.addEventListener("click", async () => {
-  if (isMobile()) {
-    // 모바일: 카메라 앱 열기
-    const fileInput = document.createElement("input");
-    fileInput.type = "file";
-    fileInput.accept = "image/*";
-    fileInput.capture = "environment"; // 후면 카메라
-    fileInput.onchange = (e) => {
-      const file = e.target.files[0];
-      if (file) showPreview(file);
-    };
-    fileInput.click();
-  } else {
-    // PC: 웹캠 열기
-    startCamera();
-  }
-});
+$cameraBtn.addEventListener("click", startCamera);
 
 
 // 문의 폼 제출 기능
