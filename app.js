@@ -711,7 +711,27 @@ async function startCamera() {
   }
 }
 // 촬영 버튼 클릭 → startCamera 실행
-$cameraBtn.addEventListener("click", startCamera);
+function isMobile() {
+  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+}
+
+$cameraBtn.addEventListener("click", async () => {
+  if (isMobile()) {
+    // 모바일: 카메라 앱 열기
+    const fileInput = document.createElement("input");
+    fileInput.type = "file";
+    fileInput.accept = "image/*";
+    fileInput.capture = "environment"; // 후면 카메라
+    fileInput.onchange = (e) => {
+      const file = e.target.files[0];
+      if (file) showPreview(file);
+    };
+    fileInput.click();
+  } else {
+    // PC: 웹캠 열기
+    startCamera();
+  }
+});
 
 
 // 문의 폼 제출 기능
