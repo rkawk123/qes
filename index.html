@@ -37,12 +37,13 @@
     <section id="home">
       <h1>스마트 원단 분석</h1>
 
+      <!-- 메인 -->
       <div class="container">
         <div class="header" id="drop-area">
           <input type="file" id="file" accept="image/*" />
           <label for="file" class="upload-btn">이미지 업로드</label>
 
-          <!-- 모바일 카메라 input -->
+          <!-- 모바일에서 기본 카메라 앱 실행용 hidden input -->
           <input type="file" id="cameraInput" accept="image/*" capture="environment" style="display:none;" />
 
           <button id="camera-btn" class="camera-btn">📷 카메라로 촬영</button>
@@ -100,13 +101,20 @@
         <div class="intro-card">
           <div class="icon-box"><i class="fa-solid fa-triangle-exclamation"></i></div>
           <h3>왜 필요한가?</h3>
-          <p>사용자는 의류 소재 정보를 정확히 파악하기 어렵고, 섬유 산업에서는 자동화된 원단 분류·검사가 요구되고 있습니다. 섬유 산업에서도 품질 관리 자동화가 중요한 과제로 떠오르고 있습니다.</p>
+          <p>
+            사용자는 의류 소재 정보를 정확히 파악하기 어렵고,
+            섬유 산업에서는 자동화된 원단 분류·검사가 요구되고 있습니다.
+            섬유 산업에서도 품질 관리 자동화가 중요한 과제로 떠오르고 있습니다.
+          </p>
         </div>
 
         <div class="intro-card">
           <div class="icon-box"><i class="fa-solid fa-lightbulb"></i></div>
           <h3>Fabric AI의 솔루션</h3>
-          <p>DenseNet121 기반 AI 모델을 활용해 실환경 원단 이미지를 분석하고 섬유 재질을 안정적으로 분류합니다. 전이학습 및 파인튜닝으로 높은 정확도를 확보했으며 다양한 서비스로 확장 가능한 구조로 설계했습니다.</p>
+          <p>
+            DenseNet121 기반 AI 모델을 활용해 실환경 원단 이미지를 분석하고 섬유 재질을 안정적으로 분류합니다.
+            전이학습 및 파인튜닝으로 높은 정확도를 확보했으며 다양한 서비스로 확장 가능한 구조로 설계했습니다.
+          </p>
         </div>
 
         <div class="features-grid">
@@ -191,42 +199,31 @@
 
   <script src="app.js"></script>
 
-  <!-- 📌 카메라 실행 스크립트 (모바일/웹 분기 + 웹캠 실패 경고) -->
+  <!-- 모바일에서 웹캠 절대 차단 -->
   <script>
     const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 
-    const fileInput = document.getElementById("file");
-    const cameraInput = document.getElementById("cameraInput");
-    const cameraBtn = document.getElementById("camera-btn");
-
-    function showWebcamError() {
-      if (isMobile) return;
-      const box = document.getElementById("message-box");
-      box.innerHTML = "⚠ PC에서 웹캠을 불러오지 못했습니다. 카메라 권한을 확인하세요.";
-      box.style.display = "block";
-      setTimeout(() => { box.style.display = "none"; }, 3500);
-    }
-
-    cameraBtn.addEventListener("click", () => {
+    document.getElementById("camera-btn").addEventListener("click", () => {
       if (isMobile) {
-        cameraInput.click();
+        // 모바일: 기본 카메라 앱만 열기
+        document.getElementById("cameraInput").click();
       } else {
-        fileInput.click();
-        setTimeout(() => {
-          if (!fileInput.files || fileInput.files.length === 0) {
-            showWebcamError();
-          }
-        }, 1500);
+        // PC/웹: 기존 파일 업로드 or 웹캠 접근
+        document.getElementById("file").click();
       }
     });
 
-    cameraInput.addEventListener("change", (e) => {
+    // 모바일에서 촬영 후 preview 적용
+    document.getElementById("cameraInput").addEventListener("change", (e) => {
       const file = e.target.files[0];
       if (!file) return;
+
       const preview = document.getElementById("preview");
       preview.src = URL.createObjectURL(file);
       preview.style.display = "block";
-      fileInput.files = e.target.files;
+
+      const originalInput = document.getElementById("file");
+      originalInput.files = e.target.files;
     });
   </script>
 
