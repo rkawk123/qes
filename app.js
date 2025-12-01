@@ -715,6 +715,8 @@ function isMobile() {
   return /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 }
 
+//!여기만 고쳤음 모바일 카메라 앱
+
 function handleCameraClick() {
   if (isMobile()) {
     // 모바일: 카메라 앱 실행
@@ -749,6 +751,8 @@ function handleCameraClick() {
 document.addEventListener("DOMContentLoaded", () => {
   $cameraBtn.addEventListener("click", handleCameraClick);
 });
+
+//!여기만 고쳤음 모바일 카메라 앱
 
 
 
