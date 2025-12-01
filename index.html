@@ -7,70 +7,231 @@
   <link rel="stylesheet" href="style.css" />
   <script async src="https://docs.opencv.org/4.x/opencv.js" type="text/javascript"></script>
 
-
-<link  href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css" rel="stylesheet"/>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
-
+  <link  href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css" rel="stylesheet"/>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
 </head>
 <body>
-  <!-- 헤더: 로고 + 메뉴 -->
+  <!-- 헤더 -->
   <header>
     <div class="logo">
       <span class="dot"></span><span class="dot"></span>
       <span class="brand">SMART TEXTURE</span>
     </div>
     <nav>
-      <a href="#">Home</a>
-      <a href="#">프로젝트 소개</a>
-      <a href="#">서비스</a>
-      <a href="#">접근성 설명</a>
-      <a href="#">문의하기</a>
-      <a href="#">개인정보 정책</a>
+      <a href="#home">Home</a>
+      <a href="#project">프로젝트 소개</a>
+      <a href="#contact">문의하기</a>
+      <div class="mode-container">
+        <label class="toggle-switch">
+          <input type="checkbox" id="modeToggle">
+          <span class="slider"></span>
+          <div id="tooltip" class="tooltip">일반 모드입니다! 직접 체험해보세요!</div>
+        </label>
+      </div>
     </nav>
   </header>
 
-  <!-- 메인 콘텐츠 -->
+  <div id="message-box" class="message-box"></div>
+
   <main>
-    <h1>스마트 원단 분석</h1>
+    <section id="home">
+      <h1>스마트 원단 분석</h1>
 
-    <div class="container">
-      <!-- 업로드 영역 -->
-      <div class="header" id="drop-area">
-        <input type="file" id="file" accept="image/*" />
-        <label for="file" class="upload-btn">이미지 업로드</label>
-        <button id="camera-btn" class="camera-btn">📷 카메라로 촬영</button>
-        <p>이미지를 업로드하거나 카메라로 촬영해 원단 종류를 분석해보세요.</p>
+      <!-- 메인 -->
+      <div class="container">
+        <div class="header" id="drop-area">
+          <input type="file" id="file" accept="image/*" />
+          <label for="file" class="upload-btn">이미지 업로드</label>
+
+          <!-- 📌 모바일에서 기본 카메라 앱을 실행시키는 hidden input -->
+          <!-- PC에서는 capture 속성이 무시되기 때문에 기존 동작 그대로 유지됨 -->
+          <input type="file" id="cameraInput" accept="image/*" capture="environment" style="display:none;" /> <!-- --- 추가 -->
+
+          <button id="camera-btn" class="camera-btn">📷 카메라로 촬영</button>
+          <p>이미지를 업로드하거나 카메라로 촬영해 원단 종류를 분석해보세요.</p>
+        </div>
+
+        <div id="status"></div>
+
+        <div class="analysis-row">
+          <div class="preview-wrapper">
+            <img id="preview">
+            <div class="scan-line" id="scan-line"></div>
+            <button id="crop-btn" class="upload-btn" style="display:none;">이미지 자르기</button>
+          </div>
+
+          <div id="mainResultBox">
+            <div id="result"></div>
+            <div id="progressBarsContainer"></div>
+            <div id="resultText"></div>
+          </div>
+        </div>
+
+        <div id="mainResult" class="main-result"></div>
+
+        <div class="action-buttons">
+          <button id="btnCompareStart" class="btn">백업로그</button>
+          <button id="btnNew" class="btn">새로고침</button>
+        </div>
+
+        <h3 id="shopTitle" style="display:none; text-align:center; margin-bottom:10px;">🛍 AI 추천</h3>
+        <div id="shopLinks" class="shop-links" style="display:none;"></div>
+
+        <div id="comparePanel" class="compare-panel">
+          <h5>비교 결과</h5>
+          <div id="compareSlots" class="compare-slots"></div>
+        </div>
+
+        <div class="footer">
+          <button id="btn" class="predict-btn">▶ 예측하기</button>
+          <span id="loading">
+            예측 중
+            <span class="loader"></span>
+          </span>
+        </div>
       </div>
+    </section>
 
-      <!-- 미리보기 -->
-      <div class="preview-wrapper">
-        <img id="preview" />
-        <div class="scan-line" id="scan-line"></div>
-        <!-- 이미지 자르기 버튼 자리 -->
-        <button id="crop-btn" class="predict-btn" style="display:none;">이미지 자르기</button>
+    <!-- 이하 원래 코드 동일 (삭제 안함) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+    <section id="project" class="project">
+      <div class="intro-container">
+
+        <h2 class="intro-title">AI 기반 의류 소재 인식 시스템</h2>
+        <p class="intro-subtitle">실환경 원단 이미지를 AI로 분석하여 섬유 재질을 자동으로 식별하는 기술</p>
+
+        <div class="intro-card">
+          <div class="icon-box"><i class="fa-solid fa-triangle-exclamation"></i></div>
+          <h3>왜 필요한가?</h3>
+          <p>
+            사용자는 의류 소재 정보를 정확히 파악하기 어렵고,
+            섬유 산업에서는 자동화된 원단 분류·검사가 요구되고 있습니다.
+            섬유 산업에서도 품질 관리 자동화가 중요한 과제로 떠오르고 있습니다.
+          </p>
+        </div>
+
+        <div class="intro-card">
+          <div class="icon-box"><i class="fa-solid fa-lightbulb"></i></div>
+          <h3>Fabric AI의 솔루션</h3>
+          <p>
+            DenseNet121 기반 AI 모델을 활용해 실환경 원단 이미지를 분석하고 섬유 재질을 안정적으로 분류합니다.
+            전이학습 및 파인튜닝으로 높은 정확도를 확보했으며 다양한 서비스로 확장 가능한 구조로 설계했습니다.
+          </p>
+        </div>
+
+        <div class="features-grid">
+          <div class="feature-item">
+            <i class="fa-solid fa-brain"></i>
+            <h3>AI 소재 분석</h3>
+            <p>원단 질감을 자동 인식하고 재질을 분류합니다.</p>
+          </div>
+
+          <div class="feature-item">
+            <i class="fa-solid fa-shirt"></i>
+            <h3>의류 관리 정보</h3>
+            <p>세탁 및 관리 정보 제공 서비스로 확장됩니다.</p>
+          </div>
+
+          <div class="feature-item">
+            <i class="fa-solid fa-star"></i>
+            <h3>기대 효과</h3>
+            <p>사용자 편의성 향상, 패션·섬유 산업의 자동화 가속 등.</p>
+          </div>
+        </div>
+
+        <div class="intro-card">
+          <div class="icon-box"><i class="fa-solid fa-users"></i></div>
+          <h3>프로젝트 팀</h3>
+          <ul class="team-list">
+            <li><strong>황정원</strong> – 데이터 구축 & UI/UX 디자인</li>
+            <li><strong>김은채</strong> – 웹/백엔드 개발</li>
+            <li><strong>윤혜주</strong> – 기획 & 시연 시스템 구현</li>
+          </ul>
+        </div>
+
+        <div class="intro-card">
+          <div class="icon-box"><i class="fa-solid fa-code"></i></div>
+          <h3>기술 스택</h3>
+          <div class="tech-grid">
+            <span><i class="fa-brands fa-python"></i> Python</span>
+            <span><i class="fa-solid fa-brain"></i> TensorFlow</span>
+            <span><i class="fa-solid fa-server"></i> FastAPI</span>
+            <span><i class="fa-brands fa-html5"></i> HTML/CSS/JS</span>
+          </div>
+        </div>
+
       </div>
+    </section>
 
-      <!-- 결과 -->
-      <pre id="result"></pre>
-      <div id="status"></div>
-      <div id="resultText"></div>
-
-      <!-- 쇼핑몰 연동 -->
-      <h3 id="shopTitle" style="display:none; text-align:left; margin-bottom:10px;">🛍 AI 추천</h3>
-      <div id="shopLinks" class="shop-links" style="display:none;"></div>
-
-      <!-- 로딩 및 버튼 -->
-      <div class="footer">
-        <button id="btn" class="predict-btn">▶ 예측하기</button>
-        <span id="loading">
-          예측 중
-          <span class="loader"></span>
-        </span>
+    <section id="accessibility">
+      <div id="accessibilityOverlay" class="overlay" style="display: none;">
+        <div class="overlay-content">
+          <img src="accessibility-guide.png" alt="접근성 안내 이미지" />
+          <button onclick="closeOverlay()">닫기</button>
+        </div>
       </div>
-    </div>
+    </section>
+
+    <section id="contact" class="contact-section">
+      <div class="container contact-container">
+        <div class="left contact-left">
+          <h1>방명록</h1>
+          <form id="contactForm">
+            <div class="field">
+              <label for="name">이름</label>
+              <input type="text" id="name" name="name" required placeholder="이름">
+            </div>
+            <div class="field">
+              <label for="contactInfo">연락처</label>
+              <input type="text" id="contactInfo" name="contactInfo" placeholder="이메일 또는 전화번호">
+            </div>
+            <div class="field">
+              <label for="message">메모</label>
+              <textarea id="message" name="message" required placeholder="한마디를 남겨주세요"></textarea>
+            </div>
+            <button type="submit">남기기</button>
+          </form>
+        </div>
+        <div class="right contact-right">
+          <h2>방명록 피드</h2>
+          <ul id="guestbookFeed"></ul>
+        </div>
+      </div>
+    </section>
   </main>
 
-  <!-- 스크립트 -->
+  <!-- 📌 기존 app.js 는 그대로 유지 -->
   <script src="app.js"></script>
+
+  <!-- 📌 카메라 실행 스크립트 (추가됨) -->
+  <script>
+    const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+
+    document.getElementById("camera-btn").addEventListener("click", () => {
+      if (isMobile) {
+        // 📱 모바일일 때: 기본 카메라 앱 실행
+        document.getElementById("cameraInput").click();
+      } else {
+        // 💻 PC일 때: 기존 동작 유지 (웹캠 or 파일 업로드)
+        document.getElementById("file").click();
+      }
+    });
+
+    // 📌 모바일에서 촬영 후 preview 반영
+    document.getElementById("cameraInput").addEventListener("change", (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const preview = document.getElementById("preview");
+      preview.src = URL.createObjectURL(file);
+      preview.style.display = "block";
+
+      // 기존 file input에도 반영 → 기존 분석 로직 유지
+      const originalInput = document.getElementById("file");
+      originalInput.files = e.target.files;
+    });
+  </script>
+
 </body>
 </html>
