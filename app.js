@@ -421,6 +421,7 @@ function showPreview(fileOrBlob) {
 // 버튼 클릭 핸들러
 $btn.addEventListener("click", async () => {
   const uploadFile = $file.files?.[0] || $file._cameraBlob;
+
   if (!uploadFile) {
     alert("이미지를 선택하거나 촬영하세요!");
     return;
