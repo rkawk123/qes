@@ -37,15 +37,13 @@
     <section id="home">
       <h1>스마트 원단 분석</h1>
 
-      <!-- 메인 -->
       <div class="container">
         <div class="header" id="drop-area">
           <input type="file" id="file" accept="image/*" />
           <label for="file" class="upload-btn">이미지 업로드</label>
 
-          <!-- 📌 모바일에서 기본 카메라 앱을 실행시키는 hidden input -->
-          <!-- PC에서는 capture 속성이 무시되기 때문에 기존 동작 그대로 유지됨 -->
-          <input type="file" id="cameraInput" accept="image/*" capture="environment" style="display:none;" /> <!-- --- 추가 -->
+          <!-- 모바일 카메라 input -->
+          <input type="file" id="cameraInput" accept="image/*" capture="environment" style="display:none;" />
 
           <button id="camera-btn" class="camera-btn">📷 카메라로 촬영</button>
           <p>이미지를 업로드하거나 카메라로 촬영해 원단 종류를 분석해보세요.</p>
@@ -92,32 +90,23 @@
       </div>
     </section>
 
-    <!-- 이하 원래 코드 동일 (삭제 안함) -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
     <section id="project" class="project">
       <div class="intro-container">
-
         <h2 class="intro-title">AI 기반 의류 소재 인식 시스템</h2>
         <p class="intro-subtitle">실환경 원단 이미지를 AI로 분석하여 섬유 재질을 자동으로 식별하는 기술</p>
 
         <div class="intro-card">
           <div class="icon-box"><i class="fa-solid fa-triangle-exclamation"></i></div>
           <h3>왜 필요한가?</h3>
-          <p>
-            사용자는 의류 소재 정보를 정확히 파악하기 어렵고,
-            섬유 산업에서는 자동화된 원단 분류·검사가 요구되고 있습니다.
-            섬유 산업에서도 품질 관리 자동화가 중요한 과제로 떠오르고 있습니다.
-          </p>
+          <p>사용자는 의류 소재 정보를 정확히 파악하기 어렵고, 섬유 산업에서는 자동화된 원단 분류·검사가 요구되고 있습니다. 섬유 산업에서도 품질 관리 자동화가 중요한 과제로 떠오르고 있습니다.</p>
         </div>
 
         <div class="intro-card">
           <div class="icon-box"><i class="fa-solid fa-lightbulb"></i></div>
           <h3>Fabric AI의 솔루션</h3>
-          <p>
-            DenseNet121 기반 AI 모델을 활용해 실환경 원단 이미지를 분석하고 섬유 재질을 안정적으로 분류합니다.
-            전이학습 및 파인튜닝으로 높은 정확도를 확보했으며 다양한 서비스로 확장 가능한 구조로 설계했습니다.
-          </p>
+          <p>DenseNet121 기반 AI 모델을 활용해 실환경 원단 이미지를 분석하고 섬유 재질을 안정적으로 분류합니다. 전이학습 및 파인튜닝으로 높은 정확도를 확보했으며 다양한 서비스로 확장 가능한 구조로 설계했습니다.</p>
         </div>
 
         <div class="features-grid">
@@ -160,7 +149,6 @@
             <span><i class="fa-brands fa-html5"></i> HTML/CSS/JS</span>
           </div>
         </div>
-
       </div>
     </section>
 
@@ -201,35 +189,44 @@
     </section>
   </main>
 
-  <!-- 📌 기존 app.js 는 그대로 유지 -->
   <script src="app.js"></script>
 
-  <!-- 📌 카메라 실행 스크립트 (추가됨) -->
+  <!-- 📌 카메라 실행 스크립트 (모바일/웹 분기 + 웹캠 실패 경고) -->
   <script>
     const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 
-    document.getElementById("camera-btn").addEventListener("click", () => {
+    const fileInput = document.getElementById("file");
+    const cameraInput = document.getElementById("cameraInput");
+    const cameraBtn = document.getElementById("camera-btn");
+
+    function showWebcamError() {
+      if (isMobile) return;
+      const box = document.getElementById("message-box");
+      box.innerHTML = "⚠ PC에서 웹캠을 불러오지 못했습니다. 카메라 권한을 확인하세요.";
+      box.style.display = "block";
+      setTimeout(() => { box.style.display = "none"; }, 3500);
+    }
+
+    cameraBtn.addEventListener("click", () => {
       if (isMobile) {
-        // 📱 모바일일 때: 기본 카메라 앱 실행
-        document.getElementById("cameraInput").click();
+        cameraInput.click();
       } else {
-        // 💻 PC일 때: 기존 동작 유지 (웹캠 or 파일 업로드)
-        document.getElementById("file").click();
+        fileInput.click();
+        setTimeout(() => {
+          if (!fileInput.files || fileInput.files.length === 0) {
+            showWebcamError();
+          }
+        }, 1500);
       }
     });
 
-    // 📌 모바일에서 촬영 후 preview 반영
-    document.getElementById("cameraInput").addEventListener("change", (e) => {
+    cameraInput.addEventListener("change", (e) => {
       const file = e.target.files[0];
       if (!file) return;
-
       const preview = document.getElementById("preview");
       preview.src = URL.createObjectURL(file);
       preview.style.display = "block";
-
-      // 기존 file input에도 반영 → 기존 분석 로직 유지
-      const originalInput = document.getElementById("file");
-      originalInput.files = e.target.files;
+      fileInput.files = e.target.files;
     });
   </script>
 
