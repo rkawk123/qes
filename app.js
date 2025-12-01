@@ -711,7 +711,30 @@ async function startCamera() {
   }
 }
 // 촬영 버튼 클릭 → startCamera 실행
-$cameraBtn.addEventListener("click", startCamera);
+$cameraBtn.addEventListener("click", () => {
+  if (isMobile()) {
+    const mobileInput = document.createElement("input");
+    mobileInput.type = "file";
+    mobileInput.accept = "image/*";
+    mobileInput.capture = "environment";
+    mobileInput.style.display = "none";
+
+    mobileInput.addEventListener("change", (e) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      $file._cameraBlob = file;
+      showPreview(file);
+      $btn.click();
+    });
+
+    document.body.appendChild(mobileInput);
+    mobileInput.click();
+    document.body.removeChild(mobileInput);
+  } else {
+    startCamera();
+  }
+});
+
 
 
 // 문의 폼 제출 기능
