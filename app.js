@@ -1,1042 +1,1483 @@
-// =========================
-// API 설정
-// =========================
-const API = "https://backend-6i2t.onrender.com/predict";
-const API_STREAM = "https://backend-6i2t.onrender.com/predict_stream"; // 스트리밍용
-const API_BASE = "https://backend-6i2t.onrender.com";
-const API_guestbook = "https://backend-6i2t.onrender.com/guestbook";
-
-// =========================
-// DOM 요소 선택
-// =========================
-const $dropArea = document.getElementById("drop-area");
-const $file = document.getElementById("file");
-const $preview = document.getElementById("preview");
-const $btn = document.getElementById("btn");
-const $cropBtn = document.getElementById("crop-btn");
-const $wrongBtn = document.getElementById("wrongBtn");
-const $correctionForm = document.getElementById("correctionForm");
-const $result = document.getElementById("result");
-const $loader = document.getElementById("loading");
-const $scanLine = document.querySelector(".scan-line");
-const $resultText = document.getElementById("resultText");
-const $cameraBtn = document.getElementById("camera-btn");
-const $previewWrapper = document.querySelector(".preview-wrapper");
-const $captureBtn = document.createElement("div");
-const $video = document.createElement("video");
-const $canvas = document.createElement("canvas");
-const $shopTitle = document.getElementById("shopTitle");
-const $shopLinks = document.getElementById("shopLinks");
-const $status = document.getElementById("status");
-const $actionButtons = document.querySelector(".action-buttons");
-const $resultBox = document.getElementById("resultBox") || document.querySelector(".result-box");
-const $feedbackSection = document.getElementById("feedbackSection");
-const $toggle = document.getElementById("modeToggle");
-const $tooltip = document.getElementById("tooltip");
-const $toggleWrapper = document.querySelector(".toggle-switch");
-const $container = document.getElementById("progressBarsContainer");
-const $predictStatus = document.getElementById("predictStatusMessage"); // (HTML엔 없어도 됨, 있으면 상태 표시)
-
-const $comparePanel = document.getElementById("comparePanel");
-const $compareSlots = document.getElementById("compareSlots");
-const $btnCompareStart = document.getElementById("btnCompareStart");
-const $btnNew = document.getElementById("btnNew");
-
-// 정정 피드백
-const $submitCorrection = document.getElementById("submitCorrection");
-const $correctLabel = document.getElementById("correctLabel");
-
-// 기타
-const $analysis = document.querySelector(".analysis-row");
-
-// 전역 상태
-let cropper = null;
-const MAX_COMPARE = 4;
-
-if (!window.__fabric_slide_interval_id) {
-  window.__fabric_slide_interval_id = null;
+/* 전체 요소 패딩·보더까지 포함해서 width 계산 */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
 }
 
-// 전역 상태 값 (피드백용)
-window.uploadedFile = null;
-window.predictedClass = null;
-
-// 데모 모드 상태
-let demoRunning = false;
-let idleTimer = null;
-let demoFiles = [];
-
-// 백업(비교) 상태
-let compareHistory = []; // { html, img }
-let compareActive = false;
-
-// 카메라 캡처 버튼 등록 여부
-let captureBtnRegistered = false;
-
-// =========================
-// 드래그 & 드롭
-// =========================
-if ($dropArea) {
-  ["dragenter", "dragover"].forEach(eventName => {
-    $dropArea.addEventListener(eventName, e => {
-      e.preventDefault();
-      e.stopPropagation();
-      $dropArea.classList.add("highlight");
-    });
-  });
-
-  ["dragleave", "drop"].forEach(eventName => {
-    $dropArea.addEventListener(eventName, e => {
-      e.preventDefault();
-      e.stopPropagation();
-      $dropArea.classList.remove("highlight");
-    });
-  });
-
-  $dropArea.addEventListener("drop", e => {
-    const files = e.dataTransfer.files;
-    if (files.length > 0) {
-      if ($file) $file.files = files;
-      if ($shopTitle) $shopTitle.style.display = "none";
-      showPreview(files[0]);
-    }
-  });
+/* 기본 레이아웃 */
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+  font-family: Arial, Helvetica, "Apple SD Gothic Neo", "맑은 고딕", sans-serif;
+  background-color: #f0f4ff;
 }
 
-// 파일 업로드
-if ($file) {
-  $file.addEventListener("change", () => {
-    if ($file.files.length > 0) {
-      if ($shopTitle) $shopTitle.style.display = "none";
-      showPreview($file.files[0]);
-    }
-  });
+/* 헤더 */
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  padding: 25px 40px 10px 40px;
+  box-sizing: border-box;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  background: #fff;
+  border-bottom: 1px solid #e5e5e5;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
 }
 
-// =========================
-// 미리보기 표시 + 스캔라인 폭 조정
-// =========================
-function showPreview(fileOrBlob) {
-  const reader = new FileReader();
-  reader.onload = e => {
-    if (!$preview) return;
+.logo { display: flex; align-items: center; padding-bottom: 15px; }
+.logo .dot { width: 14px; height: 14px; background: #232323; border-radius: 50%; margin-right: 4px; }
+.logo .brand { font-size: 1.2rem; font-weight: bold; color: #232323; }
 
-    $preview.onload = () => {
-      if ($scanLine) {
-        $scanLine.style.width = $preview.clientWidth + "px";
-        $scanLine.style.left = $preview.offsetLeft + "px";
-      }
-      $preview.style.display = "block";
-    };
-    $preview.src = e.target.result;
+nav { display: flex; align-items: center; gap: 20px; }
+nav a { color: #232323; text-decoration: none; margin-left: 28px; transition: .2s; }
+nav a:hover { color: royalblue; }
 
-    // 상태 리셋
-    if ($result) $result.textContent = "";
-    if ($resultText) $resultText.innerHTML = "";
-    if ($shopLinks) {
-      $shopLinks.style.display = "none";
-      $shopLinks.innerHTML = "";
-    }
-    if ($shopTitle) $shopTitle.style.display = "none";
-    if ($container) $container.innerHTML = "";
-    if ($status) $status.innerText = "";
-    if ($predictStatus) $predictStatus.innerText = "";
 
-    if ($previewWrapper) {
-      $previewWrapper.classList.add("has-image");
-    }
-    if ($cropBtn) {
-      $cropBtn.style.display = "block"; // 이미지를 올리면 크롭 버튼 보이게
-    }
+/* ===============================
+   #home 전체 스타일
+=============================== */
 
-    // 피드백용 전역 이미지 저장
-    window.uploadedFile = fileOrBlob;
-  };
-  reader.readAsDataURL(fileOrBlob);
+#home {
+  padding: 70px 20px;
+  background: linear-gradient(180deg, #eef3ff 0%, #f7faff 100%);
+  box-sizing: border-box;
 }
 
-// =========================
-// "예측이 틀렸어요" → 말풍선 토글
-// =========================
-if ($wrongBtn && $correctionForm) {
-  $correctionForm.style.display = "none";
-
-  $wrongBtn.addEventListener("click", () => {
-    if ($correctionForm.style.display === "none" || $correctionForm.style.display === "") {
-      $correctionForm.style.display = "flex";
-      if ($feedbackSection) $feedbackSection.style.display = "block";
-    } else {
-      $correctionForm.style.display = "none";
-    }
-  });
+#home h1 {
+  font-size: 30px;
+  font-weight: 800;
+  text-align: center;
+  color: #1f2b46;
+  margin-bottom: 40px;
 }
 
-// =========================
-// 토스트 메시지 (백업/공통용)
-// =========================
-function showMessage(msg, duration = 2000) {
-  const box = document.getElementById("message-box");
-  if (!box) {
-    alert(msg);
-    return;
+/* 메인 박스 */
+#home .container {
+  max-width: 900px;
+  width: 95%;
+  margin: 0 auto;
+  background: #ffffff;
+  border-radius: 22px;
+  padding: 40px 32px;
+  box-shadow: 0 8px 28px rgba(0,0,0,0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 35px;
+  border: 1px solid rgba(150,160,255,0.18);
+}
+
+/* ===============================
+   드롭존 (#home .header)
+=============================== */
+
+#home .header {
+  background: #f8faff;
+  border: 2px dashed #6e8bff;
+  border-radius: 16px;
+  padding: 30px 20px;
+  text-align: center;
+  transition: 0.25s;
+
+  /* 기본 세로 정렬은 유지하되
+     '버튼 두 개만' inline-flex로 가로로 나란히 배치됨 */
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+#home .header:hover {
+  border-color: #4d66ff;
+  background: #f1f4ff;
+  box-shadow: 0 4px 18px rgba(0,0,0,0.05);
+}
+
+#file { display: none; }
+
+
+/* ===============================
+   업로드 / 촬영 → 라운드 박스 아이콘 버튼
+=============================== */
+
+.upload-btn,
+.camera-btn {
+  width: 90px;
+  height: 90px;
+
+  background: #ffffff;
+  border-radius: 18px;
+  border: 3px solid #5a73ff;
+
+  display: inline-flex;            /* ← 핵심: 가로 정렬 가능하도록 inline-flex */
+  flex-direction: column;          /* 아이콘 + 텍스트는 세로 정렬 */
+  justify-content: center;
+  align-items: center;
+
+  font-size: 13px;
+  font-weight: 700;
+  color: #334;
+
+  cursor: pointer;
+  transition: 0.25s ease;
+
+  box-shadow: 0 6px 16px rgba(80, 110, 255, 0.25);
+  padding: 0;
+}
+
+/* hover 효과 */
+.upload-btn:hover,
+.camera-btn:hover {
+  transform: translateY(-4px);
+  border-color: #3d55ff;
+  box-shadow: 0 10px 20px rgba(70, 100, 255, 0.35);
+}
+
+/* 아이콘 */
+.upload-btn img,
+.camera-btn img {
+  width: 42px;
+  height: 42px;
+  margin-bottom: 6px;
+  opacity: 0.9;
+  pointer-events: none;
+}
+
+/* 텍스트 */
+.upload-btn span,
+.camera-btn span {
+  margin-top: 4px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #5a73ff; /* ⬅ 밝고 선명한 파랑 */
+  opacity: 0.8;  /* ⬅ 약간 은은하게 */
+}
+
+
+/* ===============================
+   ★ 업로드/촬영 버튼 가로 정렬 핵심 부분 ★
+=============================== */
+
+/* 드롭존 안에서 label.upload-btn + button.camera-btn 을 같은 줄로 */
+#drop-area .upload-btn,
+#drop-area .camera-btn {
+  display: inline-flex;   /* ← inline-flex라서 가로 배치됨 */
+  margin-bottom: 0;
+}
+
+/* 버튼 사이 간격 */
+#drop-area .upload-btn {
+  margin-right: 26px;
+}
+
+/* 설명문은 아래로 */
+#drop-area p {
+  margin-top: 20px;
+  color: #6f8bff; /* ⬅ 은은한 파랑 */
+  opacity: 0.8;  /* ⬅ 약간 은은하게 */
+}
+
+
+
+/* ===============================
+   미리보기 / 레이아웃 복구
+=============================== */
+
+.analysis-row {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 30px;
+  flex-wrap: wrap;
+}
+
+/* 미리보기 */
+.preview-wrapper {
+  width: 380px;
+  height: 380px;
+  position: relative;
+  background: #f3f5ff;
+  border: 1px solid #dbe2ff;
+  border-radius: 16px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+}
+
+#preview {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.preview-column {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;   /* 미리보기와 버튼 사이 간격 */
+}
+
+/* action-buttons → preview 아래 */
+.action-buttons {
+  opacity: 0;
+  transition: .3s;
+  gap: 18px;
+  display: none;
+}
+
+.action-buttons.show {
+  opacity: 1;
+  display: flex;
+}
+
+/* ===============================
+   비교하기 / 새로 분석하기 버튼
+=============================== */
+
+.action-buttons .btn {
+  padding: 10px 20px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #6e8bff, #4d66ff);
+  border: none;
+  color: white;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.25s;
+  box-shadow: 0 4px 12px rgba(90,120,255,0.25);
+}
+
+.action-buttons .btn:hover {
+  transform: translateY(-2px);
+  background: linear-gradient(135deg, #5f7cff, #4258ff);
+  box-shadow: 0 6px 14px rgba(90,120,255,0.35);
+}
+
+.action-buttons .btn:active {
+  transform: translateY(0px);
+  box-shadow: 0 3px 8px rgba(90,120,255,0.25);
+}
+
+/* 비교 패널 전체 영역 */
+#comparePanel {
+  display: none;
+  width: 100%;
+  clear: both;
+  margin-top: 20px;
+}
+
+.compare-panel {
+  margin-top: 20px;
+  padding: 15px 0;
+  background: #f7f8ff;
+  border-radius: 12px;
+  border: 1px solid #d8dcff;
+  overflow-x: auto;       /* 👈 가로 스크롤 활성화 */
+  overflow-y: hidden;
+  white-space: nowrap;    /* 👈 요소들을 한 줄로 */
+}
+
+/* 가로 슬라이더 */
+.compare-slots {
+  display: inline-flex;   /* 👈 한 줄 정렬 */
+  gap: 15px;
+  padding: 10px 15px;
+}
+
+/* 각 백업 카드 */
+.compare-card {
+  flex: 0 0 240px;        /* 👈 가로 길이 고정 */
+  background: #ffffff;
+  border: 1px solid #e0e3ff;
+  border-radius: 10px;
+  padding: 12px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+  position: relative;     /* 삭제 버튼 위치 기준 */
+}
+
+/* 이미지 */
+.compare-card .compare-image img {
+  width: 100%;
+  max-height: 150px;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
+/* 텍스트 */
+.compare-result {
+  margin-top: 10px;
+  font-size: 14px;
+}
+
+/* ❌ 카드별 삭제 버튼 */
+.compare-delete {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: #ff5c5c;
+  border: none;
+  color: #fff;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 22px;
+  text-align: center;
+  box-shadow: 0 2px 4px rgba(255,0,0,0.3);
+}
+.compare-delete:hover {
+  background: #ff3b3b;
+}
+
+
+
+/* ===============================
+   result-box height rollback
+=============================== */
+
+.result-box {
+  display: none;
+  opacity: 0;
+  pointer-events: none;
+
+  background: #f9faff;
+  padding: 25px 28px;
+  border-radius: 16px;
+  border: 1px solid rgba(150,160,255,0.25);
+  box-shadow: 0 6px 18px rgba(0,0,0,0.05);
+
+  width: 360px;
+  min-height: 360px;  /* ← 롤백된 높이 */
+  position: relative;
+  transition: .35s;
+}
+
+.result-box.active {
+  display: block;
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* ===============================
+   파란 계열 Progress Bars
+=============================== */
+
+#progressBarsContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.progress-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.progress-label {
+  width: 90px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+}
+
+.progress-wrapper {
+  flex: 1;
+  height: 13px;
+  background: #e6e9f3;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.progress-bar {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, #7aa3ff, #4f6dff);
+  border-radius: 10px;
+  transition: width 1.2s cubic-bezier(.42,0,.58,1);
+}
+
+.progress-percent {
+  width: 40px;
+  text-align: right;
+  font-weight: 600;
+  color: #333;
+}
+
+/* ===============================
+   예측하기 버튼 (푸터)
+=============================== */
+
+.predict-btn {
+  padding: 14px 30px;
+  background: #5b7bff;
+  border-radius: 14px;
+  color: #fff;
+  font-size: 16px;
+  border: none;
+  cursor: pointer;
+  transition: .25s;
+}
+
+.predict-btn:hover {
+  background: #3e55e6;
+}
+
+/* ===============================
+   Crop 버튼 (오버레이)
+=============================== */
+
+.crop-overlay-btn {
+  position: absolute;
+  bottom: 16px;
+  right: 16px;
+
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+
+  background: rgba(0, 0, 0, 0.55);
+  border: none;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  cursor: pointer;
+  opacity: 0;
+  pointer-events: none;
+  transition: .25s;
+}
+
+.preview-wrapper.has-image .crop-overlay-btn {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.crop-overlay-btn:hover {
+  background: rgba(0, 0, 0, 0.75);
+}
+
+/* ===============================
+   예측이 틀렸어요 + 말풍선
+=============================== */
+
+/* 작은 버튼 */
+.feedback-wrong-btn {
+  writing-mode: horizontal-tb !important;
+  transform: none !important;
+  rotate: 0deg !important;
+  display: inline-flex !important;
+  flex-direction: row !important;
+
+  white-space: nowrap;  /* 텍스트 줄바꿈 방지 */
+
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+
+  padding: 6px 10px;
+  font-size: 12px;
+
+  background: rgba(150,180,255,0.25);
+  border: 1px solid rgba(120,150,255,0.35);
+  color: #3d4f9e;
+
+  border-radius: 6px;
+  cursor: pointer;
+  transition: .2s;
+}
+
+.feedback-wrong-btn:hover {
+  background: rgba(150,180,255,0.35);
+}
+
+.feedback-wrapper {
+  position: absolute;
+  bottom: 12px;
+  right: 12px;
+}
+
+/* ⬇ 말풍선 (오른쪽 바깥으로 튀어나오는 형태) */
+.correction-form {
+  position: absolute;
+  right: -14px;
+  bottom: 42px;
+
+  min-width: 170px;
+
+  background: #ffffff;
+  border-radius: 12px;
+  border: 1px solid #d4d8ff;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+
+  padding: 12px;
+  display: none;
+  flex-direction: column;
+  gap: 10px;
+
+  transform-origin: bottom right;
+  animation: bubbleIn .25s ease forwards;
+}
+
+@keyframes bubbleIn {
+  0% { opacity: 0; transform: translateY(8px) scale(0.96); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* 말풍선 꼬리 */
+.correction-form::after {
+  content: "";
+  position: absolute;
+  bottom: -6px;
+  right: 14px;
+
+  width: 10px;
+  height: 10px;
+  background: #ffffff;
+  border-left: 1px solid #d4d8ff;
+  border-bottom: 1px solid #d4d8ff;
+  transform: rotate(45deg);
+}
+
+/* 옵션 폼 */
+.correct-label-select {
+  width: 100%;
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid #ccd2ff;
+}
+
+.feedback-submit-btn {
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: none;
+  background: #a9bdff;
+  cursor: pointer;
+}
+.feedback-submit-btn:hover {
+  background: #96afff;
+}
+
+
+/* 로딩 애니메이션 */
+#loading {
+  display: none; /* 초기 숨김 */
+  font-weight: bold;
+  margin-left: 10px;
+  vertical-align: middle;
+}
+
+.loader {
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #3498db;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  display: inline-block;
+  animation: spin 1s linear infinite;
+  margin-left: 5px;
+  vertical-align: middle;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.scan-line {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;      /* 업로드된 이미지 width에 맞춤 */
+  height: 4px;
+  background: rgba(50, 200, 50, 0.7);
+  box-shadow: 0 0 8px rgba(50, 200, 50, 0.8);
+  animation: scan 2s linear infinite;
+  display: none;
+}
+
+@keyframes scan {
+  0% { top: 0%; }
+  100% { top: 100%; }
+}
+
+/* 촬영 버튼 */
+.capture-circle {
+  position: absolute;
+  bottom: 15px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 50px;
+  height: 50px;
+  background-color: white;
+  border-radius: 50%;
+  border: 4px solid rgba(0, 110, 255, 0.7);
+  cursor: pointer;
+  box-shadow: 0 0 10px rgba(0,0,0,0.3);
+}
+
+
+
+/* 푸터 */
+.footer {
+  width: 100%;
+  padding: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  box-sizing: border-box; /* 패딩 포함해서 폭 계산 */
+  flex-shrink: 0;         /* 컨테이너 줄어들어도 푸터 안쪽 유지 */
+}
+
+
+/* --- SSE 상태 표시 전용 --- */
+#status {
+  font-size: 1.1rem;
+  margin-top: 15px;
+  color: #333;
+  font-weight: 600;
+  text-align: center;
+  transition: 0.3s;
+}
+
+/* 점점(...) 표시 애니메이션 */
+#status.loading::after {
+  content: " ...";
+  animation: dots 1s steps(3, end) infinite;
+}
+
+@keyframes dots {
+  0%, 20% { content: " ."; }
+  40% { content: " .."; }
+  60%, 100% { content: " ..."; }
+}
+
+/*토스트 창*/
+.message-box {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.85);
+  color: #fff;
+  padding: 12px 20px;
+  border-radius: 8px;
+  font-size: 15px;
+  z-index: 2000;
+  display: none;
+  opacity: 0;
+  transition: opacity 0.4s ease-in-out;
+}
+
+.message-box.show {
+  display: block;
+  opacity: 1;
+}
+
+/*토글 스위치*/
+.mode-container {
+  position: relative;
+  display: inline-block;
+  margin: 0px;
+}
+
+/* 토글 스위치 전체 */
+.toggle-switch {
+  position: relative;
+  width: 55px;
+  height: 28px;
+  display: inline-block;
+  overflow: visible !important; /* 이걸 안 넣으면 툴팁이 잘림 */
+}
+
+.toggle-switch input {
+  pointer-events: none;
+}
+
+/* 스위치 배경 */
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0; left: 0;
+  right: 0; bottom: 0;
+  background-color: #ccc;
+  border-radius: 34px;
+  transition: background-color 0.3s ease;
+}
+
+/* 동그라미 */
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 22px;
+  width: 22px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  border-radius: 50%;
+  transition: transform 0.3s ease;
+}
+
+/* ON 상태 */
+input:checked + .slider {
+  background-color: #4caf50;
+}
+
+input:checked + .slider:before {
+  transform: translateX(27px);
+}
+
+/* 툴팁 */
+.tooltip {
+  width: max-content;
+  position: absolute;
+  top: 40px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #333;
+  color: white;
+  font-size: 10px;
+  line-height: 1.4;
+  padding: 6px 12px;
+  border-radius: 6px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+  white-space: nowrap;
+  z-index: 9999;
+}
+
+.toggle-switch:hover .tooltip {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* ============================================================
+   📦 백업(비교) 카드 디자인
+============================================================ */
+
+/* 패널 기본 */
+#comparePanel {
+  display: none;
+  padding: 15px;
+  background: #f7f9ff;
+  border-radius: 12px;
+  border: 1px solid #e4e8ff;
+  margin-top: 20px;
+}
+
+/* 아이템 영역 */
+#compareSlots {
+  display: flex;
+  gap: 15px;
+  flex-wrap: wrap;
+}
+
+/* 카드 */
+.compare-slot {
+  width: 230px;
+  background: #ffffff;
+  border-radius: 14px;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.07);
+  padding: 12px;
+  position: relative;
+  transition: transform 0.2s ease;
+}
+.compare-slot:hover {
+  transform: translateY(-4px);
+}
+
+/* 이미지 */
+.backup-img img {
+  width: 100%;
+  height: 130px;
+  object-fit: cover;
+  border-radius: 10px;
+  margin-bottom: 10px;
+}
+
+/* 텍스트 영역 */
+.backup-info {
+  font-size: 13px;
+  color: #444;
+}
+
+/* 🔥 개별 삭제 버튼 */
+.delete-backup-btn {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 22px;
+  height: 22px;
+  border: none;
+  border-radius: 50%;
+  background: #ff6b6b;
+  color: #fff;
+  font-size: 16px;
+  line-height: 22px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+.delete-backup-btn:hover {
+  background: #ff3b3b;
+  transform: scale(1.12);
+}
+
+.compare-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.compare-item {
+  width: calc(25% - 8px);
+  min-width: 180px;
+
+  padding: 8px;
+  background: #fafafa;
+  border-radius: 8px;
+
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  box-sizing: border-box;
+}
+
+.compare-item h5 {
+  font-size: 12px;
+  /*margin: 0 0 6px 0;*/
+}
+
+.compare-item p {
+  /*margin: 2px 0;*/
+  font-size: 10px;
+}
+
+.result-container {
+  margin-top: 10px;
+}
+
+/* 전체 영역 */
+.project {
+  padding: 100px 20px;
+  background: linear-gradient(180deg, #f6f8ff 0%, #eef1ff 100%);
+  font-family: 'Pretendard', sans-serif;
+}
+
+/* 컨테이너 */
+.intro-container {
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+/* 타이틀 */
+.intro-title {
+  font-size: 36px;
+  font-weight: 800;
+  text-align: center;
+  margin-bottom: 15px;
+  color: #3d3f5a;
+}
+
+.intro-subtitle {
+  font-size: 20px;
+  text-align: center;
+  color: #6C7BFF;
+  margin-bottom: 60px;
+}
+
+/* 공통 카드 스타일 */
+.intro-card {
+  background: #fff;
+  padding: 40px 32px;
+  border-radius: 18px;
+  box-shadow: 0 10px 28px rgba(0,0,0,0.06);
+  margin-bottom: 50px;
+  position: relative;
+  border-left: 6px solid #667CFF;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.intro-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 14px 32px rgba(0,0,0,0.08);
+}
+
+/* 아이콘 */
+.icon-box {
+  position: absolute;
+  top: -25px;
+  left: -25px;
+  background: linear-gradient(135deg, #5C7CFA, #6C8CFF);
+  color: white;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 20px;
+  box-shadow: 0 6px 16px rgba(92,124,250,0.35);
+}
+
+.intro-card h3 {
+  font-size: 24px;
+  margin-bottom: 15px;
+  color: #2e2f49;
+}
+
+.intro-card p {
+  font-size: 17px;
+  color: #4a4f6d;
+  line-height: 1.65;
+}
+
+/* 핵심 기능 (카드형 그리드) */
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 22px;
+  margin-bottom: 60px;
+}
+
+.feature-item {
+  background: #ffffff;
+  padding: 30px 22px;
+  border-radius: 16px;
+  text-align: center;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.05);
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.feature-item:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 10px 28px rgba(0,0,0,0.07);
+}
+
+.feature-item i {
+  font-size: 32px;
+  color: #5C7CFA;
+  margin-bottom: 12px;
+}
+
+.feature-item h3 {
+  font-size: 20px;
+  margin-bottom: 10px;
+  color: #33395c;
+}
+
+.feature-item p {
+  font-size: 15px;
+  color: #4a4f6d;
+}
+
+/* 팀 리스트 */
+.team-list li {
+  font-size: 17px;
+  margin-bottom: 8px;
+  color: #4a4f6d;
+}
+
+/* 기술 스택 */
+.tech-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-top: 18px;
+}
+
+.tech-grid span {
+  background: #e8ebff;
+  padding: 12px 20px;
+  border-radius: 14px;
+  font-size: 15px;
+  color: #35406a;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500;
+  transition: background 0.25s ease;
+}
+
+.tech-grid span:hover {
+  background: #d5daff;
+}
+
+.tech-grid i {
+  color: #5C7CFA;
+  font-size: 18px;
+}
+
+/* ================================
+   방명록 UI 최종 정리본
+   ================================ */
+
+#contact.contact-section {
+  padding: 80px 0 !important;
+  background: linear-gradient(180deg, #f6f8ff, #eef1ff) !important;
+  font-family: "Pretendard", sans-serif !important;
+}
+
+/* 좌우 큼직한 카드 레이아웃 */
+#contact.contact-section .contact-container {
+  display: flex !important;
+  flex-direction: row !important;
+  justify-content: space-between !important;
+  gap: 32px !important;
+  max-width: 1200px !important;
+  width: 100% !important;
+  margin: 0 auto !important;
+  align-items: stretch !important;
+}
+
+/* 공통 카드 스타일 */
+#contact.contact-section .contact-left,
+#contact.contact-section .contact-right {
+  background: #ffffff !important;
+  padding: 28px 32px !important;
+  border-radius: 20px !important;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.07) !important;
+  border: 1px solid rgba(115,135,255,0.15) !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+/* 비율 조절 */
+#contact.contact-section .contact-left {
+  flex: 0.9 !important;
+}
+#contact.contact-section .contact-right {
+  flex: 1.1 !important;
+}
+
+/* 제목 */
+#contact.contact-section h1,
+#contact.contact-section h2 {
+  font-size: 26px !important;
+  font-weight: 700 !important;
+  color: #2f2f4f !important;
+  margin-bottom: 25px !important;
+}
+
+/* 입력 필드 */
+#contact.contact-section .field {
+  margin-bottom: 18px !important;
+}
+#contact.contact-section .field label {
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  color: #555 !important;
+  margin-bottom: 6px !important;
+}
+
+#contact.contact-section input,
+#contact.contact-section textarea {
+  padding: 13px 15px !important;
+  border: 1px solid #dcdcdc !important;
+  border-radius: 12px !important;
+  background: #fafafa !important;
+  font-size: 15px !important;
+  transition: all 0.25s ease !important;
+}
+
+#contact.contact-section textarea {
+  height: 130px !important;
+}
+
+/* focus 효과 */
+#contact.contact-section input:focus,
+#contact.contact-section textarea:focus {
+  border-color: #7d8cff !important;
+  background: #fff !important;
+  box-shadow: 0 0 0 3px rgba(125,140,255,0.18) !important;
+}
+
+/* 버튼 */
+#contact.contact-section button[type="submit"] {
+  width: 100% !important;
+  padding: 14px !important;
+  background: #7d8cff !important;
+  border-radius: 14px !important;
+  border: none !important;
+  color: #fff !important;
+  font-size: 15.5px !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  margin-top: 8px !important;
+  transition: 0.25s ease !important;
+}
+
+#contact.contact-section button[type="submit"]:hover {
+  background: #5f6dff !important;
+  transform: translateY(-2px) !important;
+}
+
+/* ===========================================
+   방명록 피드
+   =========================================== */
+
+/* 피드 컨테이너 */
+#contact.contact-section #guestbookFeed {
+  list-style: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+
+  /* 스크롤 영역 지정 */
+  max-height: 380px !important;
+  overflow-y: auto !important;
+
+  /* 부드러운 스크롤 */
+  scroll-behavior: smooth !important;
+  padding-right: 6px !important;
+}
+
+/* 스크롤바 디자인 */
+#contact.contact-section #guestbookFeed::-webkit-scrollbar {
+  width: 8px;
+}
+#contact.contact-section #guestbookFeed::-webkit-scrollbar-thumb {
+  background: #cdd2ff;
+  border-radius: 8px;
+}
+#contact.contact-section #guestbookFeed::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* 피드 항목 */
+#contact.contact-section #guestbookFeed li {
+  background: #fafbff !important;
+  padding: 18px !important;
+  border-radius: 14px !important;
+  border: 1px solid #eceeff !important;
+  margin-bottom: 14px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 6px !important;
+  transition: 0.22s ease !important;
+}
+
+#contact.contact-section #guestbookFeed li:hover {
+  transform: translateY(-3px) !important;
+  box-shadow: 0 8px 20px rgba(125,140,255,0.15) !important;
+}
+
+#contact.contact-section #guestbookFeed li strong {
+  font-size: 16px !important;
+  font-weight: 700 !important;
+  color: #333 !important;
+}
+
+#contact.contact-section #guestbookFeed li .date {
+  font-size: 11px !important;
+  color: #8a8a8a !important;
+}
+
+#contact.contact-section #guestbookFeed li p {
+  font-size: 14px !important;
+  color: #444 !important;
+  line-height: 1.45 !important;
+  white-space: pre-line !important;
+}
+
+/* 방명록 컨테이너의 부모 .container 영향 완전 무시 */
+#contact .contact-container {
+  display: flex !important;
+  flex-direction: row !important;
+  justify-content: space-between !important;
+  align-items: stretch !important;
+
+  /* container가 가진 max-width 800px 무시 */
+  max-width: 1200px !important;
+  width: 100% !important;
+
+  /* 부모의 flex settings 무력화 */
+  flex: none !important;
+  align-self: stretch !important;
+}
+
+#contact {
+  width: 100% !important;
+}
+
+
+/* ===============================
+   방명록 삭제 버튼 디자인
+   =============================== */
+
+#contact.contact-section #guestbookFeed .deleteBtn {
+  align-self: flex-end !important;
+  background: #e8ecff !important;         /* 은은한 파스텔 블루 */
+  color: #5660ff !important;               /* 선명한 메인 포인트 */
+  border: none !important;
+  padding: 6px 12px !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  border-radius: 8px !important;
+  cursor: pointer !important;
+  transition: 0.22s ease !important;
+  margin-top: 6px !important;
+
+  display: flex !important;
+  align-items: center !important;
+  gap: 5px !important;
+}
+
+/* hover 시 살짝 떠오르고 색 강조 */
+#contact.contact-section #guestbookFeed .deleteBtn:hover {
+  background: #d8ddff !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 4px 12px rgba(100, 110, 255, 0.18) !important;
+}
+
+/* active 시 클릭감 */
+#contact.contact-section #guestbookFeed .deleteBtn:active {
+  transform: translateY(0px) !important;
+  box-shadow: none !important;
+}
+
+/* ==========================================
+   🟦 쇼핑몰 이미지 슬라이드 (예전 구조 100% 동일)
+   ========================================== */
+
+/* shop 전체 — 이미지 박스들을 가운데 정렬 */
+.shop-links {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 40px;     /* 예전 간격 그대로 */
+  margin-top: 20px;
+}
+
+/* 각 쇼핑몰 링크(이미지 박스) */
+.shop-links a {
+  display: block;
+  position: relative;
+  overflow: hidden;       /* 박스 밖 이미지 안보이게 */
+  width: 230px;           /* 예전 구조 동일 */
+  height: 150px;          /* 예전 구조 동일 */
+  border-radius: 10px;
+  text-decoration: none;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* 모든 이미지를 완전 겹쳐두고 기본은 보이지 않음 */
+.shop-links img {
+  position: absolute;
+  top: 0;
+  left: 0;
+
+  width: 100%;
+  height: 100%;
+  object-fit: cover;       /* 예전 구조 그대로 */
+  
+  border-radius: 10px;
+  opacity: 0;              /* 기본은 안 보임 */
+  transition: opacity 0.5s ease;  /* 페이드 효과 */
+}
+
+/* 현재 활성 이미지 */
+.shop-links img.active {
+  opacity: 1;
+  z-index: 2;
+}
+
+/* hover 효과 (예전 그대로 유지) */
+.shop-links a:hover {
+  transform: scale(1.1);
+  box-shadow: 0 6px 12px rgba(0,0,0,0.2);
+}
+
+
+/* ========================
+  모바일 ==================== */
+@media (max-width: 480px) {
+body {
+  font-family: Arial, Helvetica, "Apple SD Gothic Neo", "맑은 고딕", sans-serif;
+  margin: 0;
+  padding: 0;
+  background-color: #f0f4ff;     /* 배경색 */
+}
+
+html, body {
+  width: 100%;
+  overflow-x: hidden;
+}
+
+#home {
+  /*padding: 10px 10px;*/
+  background: linear-gradient(180deg, #eef3ff 0%, #f7faff 100%);
+  box-sizing: border-box;
+}
+
+#home h1 {
+  font-size: 24px;
+  font-weight: 800;
+  text-align: center;
+  color: #1f2b46;
+  /*margin-bottom: 20px;*/
+}
+
+/* 메인 컨테이너 */
+#home .container {
+  width: 100%;
+  padding: 24px 16px;
+  max-width: 400px !important;
+  margin: 0 auto;
+}
+
+/* 업로드 영역 */
+#home .header {
+  background: #f8faff;
+  border: 2px dashed #6e8bff;
+  border-radius: 16px;
+  padding: 30px 20px;
+  transition: 0.25s;
+}
+
+#home .header:hover {
+  border-color: #4d66ff;
+  background: #f1f4ff;
+  box-shadow: 0 4px 18px rgba(0,0,0,0.05);
+}
+
+header {
+    width: 100% !important;
+    padding: 10px 0 !important;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
   }
 
-  box.textContent = msg;
-  box.classList.add("show");
+  nav {
+    width: 100% !important;
+    display: flex;
+    justify-content: center !important;
+    gap: 10px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
 
-  if (box._hideTimer) clearTimeout(box._hideTimer);
+  nav a {
+    margin: 0 !important;      /* ← 문제 핵심 해결 */
+    padding: 4px 6px !important;
+    font-size: 16px !important;
+  }
 
-  box._hideTimer = setTimeout(() => {
-    box.classList.remove("show");
-  }, duration);
-}
+  .toggle-switch {
+    transform: scale(1);     /* 스위치 크기 줄이기 */
+  }
 
-// =========================
-// 데모/일반 모드 토글 툴팁
-// =========================
-function updateTooltipText() {
-  if (!$toggle || !$tooltip) return;
-  if ($toggle.checked) {
-    $tooltip.textContent = "데모 모드입니다!";
-  } else {
-    $tooltip.textContent = "일반 모드입니다! 직접 체험해보세요!";
+  header {
+    flex-direction: column;     /* 위아래로 배치 */
+    justify-content: center;    /* 가로 중앙 */
+    align-items: center;        /* 세로 중앙 */
+    padding: 15px 0;            /* 상하 여백 줄이기 */
+  }
+
+  .brand {
+    font-size: 18px;
+  }
+
+  .logo {
+    margin: 10px 0;
+    align-items: center;  /* 세로 가운데 맞춤 */
+    justify-content: center; /* 가로 가운데 맞춤 */
+  }
+
+  nav {
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;        /* 가운데 정렬 */
+    gap: 10px;
+    margin-right: 20px; /*시각적 중심 보정*/
+  }
+
+  h1 {
+    width: 90%;        /*제목 폭*/
+    font-size: 20px;
+    margin: 20px;  /**/
+  }
+
+  h2, p {
+    white-space: normal; /* 줄바꿈 허용 */
+    word-break: keep-all; /* 단어 단위로 줄바꿈 */
+    text-align: center;
+  }
+
+  .container { /*컨테이너 내부*/
+    width: 100%; /*90*/
+    height: auto;
+    max-width: 360px;
+    padding: 20px; /*10*/
+    align-items: center;
+  }
+
+  /*.preview-wrapper {
+    width: 100% !important;
+    /*height: auto !important;*/
+    max-width: 320px; /* 모바일 기준 안정 크기 */
+    margin: 0 auto;
+  }*/
+
+  #preview {
+    height: 100%;
+    width: 100%;
+  }
+
+  #resultText, #result {
+    max-width: 360px;
+    margin: 0 auto;
+  }
+
+  .capture-circle {
+    width: 50px;
+    height: 50px;
+    border-width: 3px;
+  }
+  .upload-btn,
+  .camera-btn,
+  .predict-btn {
+    padding: 6px 12px;
+    font-size: 14px;
+    border: none;
+  }
+
+  .action-buttons {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    margin: 0 auto;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  .shop-links {
+    justify-content: center; /* 가운데 정렬 유지 */
+    gap: 15px;             /* 이미지 간격 축소 */
+  }
+
+  .shop-links img {
+    width: 120px;           /* 모바일에 맞는 이미지 크기 */
+    height: auto;
   }
 }
 
-if ($toggleWrapper && $tooltip && $toggle) {
-  $toggleWrapper.addEventListener("mouseenter", () => {
-    updateTooltipText();
-    $tooltip.style.opacity = "1";
-  });
-  $toggleWrapper.addEventListener("mouseleave", () => {
-    $tooltip.style.opacity = "0";
-  });
-  $toggle.addEventListener("change", updateTooltipText);
-}
-
-// =========================
-// 이미지 크롭 기능 (Cropper.js) — 자동 적용 버전 (네 코드 기준)
-// =========================
-if ($cropBtn && $preview) {
-  $cropBtn.addEventListener("click", () => {
-    if (!$preview.src) {
-      alert("먼저 이미지를 업로드하세요!");
-      return;
-    }
-
-    // 기존 cropper 제거
-    if (cropper) {
-      cropper.destroy();
-      cropper = null;
-    }
-
-    // 크롭 시작
-    cropper = new Cropper($preview, {
-      viewMode: 1,
-      autoCrop: false,
-      background: false,
-      modal: true,
-      movable: true,
-      zoomable: true,
-
-      // 드래그로 박스 선택 끝났을 때 자동 반영
-      cropend() {
-        cropper.getCroppedCanvas().toBlob((blob) => {
-          const reader = new FileReader();
-          reader.onload = (e) => {
-            // 미리보기 갱신
-            $preview.src = e.target.result;
-
-            // 업로드 상태 갱신
-            if ($file) $file._cameraBlob = blob;
-            window.uploadedFile = blob;
-
-            // 종료
-            cropper.destroy();
-            cropper = null;
-          };
-          reader.readAsDataURL(blob);
-        }, "image/png");
-      }
-    });
-  });
-}
-
-// =========================
-// 초기 상태로 완전 리셋 (공통)
-// =========================
-function goToInitialState() {
-
-  // 🔥 파일 입력 초기화
-  if ($file) {
-    $file.value = "";
-    $file._cameraBlob = null;
+/* 방명록 컨테이너 */
+@media (max-width: 900px) {
+  #contact.contact-section .contact-container {
+    flex-direction: column !important;
   }
-
-  // 🔥 미리보기 초기화
-  if ($preview) {
-    $preview.src = "";
-    $preview.style.display = "none";
-  }
-
-  if ($previewWrapper) {
-    $previewWrapper.innerHTML = "";
-    $previewWrapper.appendChild($preview);
-    if ($scanLine) $previewWrapper.appendChild($scanLine);
-    $previewWrapper.classList.remove("has-image");
-  }
-
-  // 🔥 결과 초기화
-  if ($result) $result.innerHTML = "";
-  if ($container) $container.innerHTML = "";
-  if ($resultText) $resultText.innerHTML = "";
-
-  // 🔥 결과 박스 비활성화
-  if ($resultBox) $resultBox.classList.remove("active");
-
-  // 🔥 action 버튼(백업/새로 분석) 숨김 ← 백업 기록은 유지됨
-  if ($btnCompareStart) $btnCompareStart.style.display = "none";
-  if ($btnNew) $btnNew.style.display = "none";
-
-  // 🔥 피드백 숨김
-  if ($feedbackSection) $feedbackSection.style.display = "none";
-  if ($correctionForm) $correctionForm.style.display = "none";
-
-  // 🔥 쇼핑몰 추천 초기화
-  if ($shopLinks) {
-    $shopLinks.style.display = "none";
-    $shopLinks.innerHTML = "";
-  }
-  if ($shopTitle) $shopTitle.style.display = "none";
-
-  // 🔥 상태 메시지 초기화
-  if ($status) $status.innerText = "";
-  if ($predictStatus) $predictStatus.innerText = "";
-
-  // 🔥 크롭 버튼 숨기기 (새 이미지 선택하면 다시 나타남)
-  const cropBtn = document.getElementById("crop-btn");
-  if (cropBtn) cropBtn.style.display = "none";
-
-  // 🔥 자동 슬라이드 초기화
-  if (window.__fabric_slide_interval_id) {
-    clearInterval(window.__fabric_slide_interval_id);
-    window.__fabric_slide_interval_id = null;
-  }
-
-  // 내부 상태 리셋
-  window.uploadedFile = null;
-  window.predictedClass = null;
-
-  // 🔥 comparePanel / compareHistory는 절대 건드리지 않음!!
-  // goToInitialState 마지막 부분에 추가
-  setTimeout(() => {
-    if (compareHistory.length > 0) {
-        $comparePanel.style.display = "block";
-    }
-  }, 0);
-}
-
-
-// ============================
-// 📦 백업(비교) 시스템 (팀원 로직 기반)
-// ============================
-if ($btnCompareStart) $btnCompareStart.style.display = "none";
-if ($btnNew) $btnNew.style.display = "none";
-
-function saveCurrentResultSnapshot() {
-  const imgSrc = $preview?.src || "";
-
-  const html = `
-    <div class="raw-result">${$result.innerHTML}</div>
-    <div class="raw-bars">${$container.innerHTML}</div>
-    <div class="raw-text">${$resultText.innerHTML}</div>
-  `;
-
-  return { img: imgSrc, html };
-}
-
-
-function renderCompareSlots() {
-  $compareSlots.innerHTML = "";
-
-  // 비교 기록이 0개면 패널 숨김
-  if (compareHistory.length === 0) {
-    $comparePanel.style.display = "none";
-    return;
-  }
-
-  // compareHistory가 있으면 반드시 comparePanel 표시
-  $comparePanel.style.display = "block";
-
-  compareHistory.forEach((item, idx) => {
-    const slot = document.createElement("div");
-    slot.className = "compare-card";
-
-    slot.innerHTML = `
-      <button class="compare-delete" data-idx="${idx}">×</button>
-      <div class="compare-image">
-        <img src="${item.img}" />
-      </div>
-      <div class="compare-result">${item.html}</div>
-    `;
-
-    $compareSlots.appendChild(slot);
-  });
-
-  document.querySelectorAll(".compare-delete").forEach(btn => {
-    btn.addEventListener("click", () => {
-      const i = Number(btn.dataset.idx);
-      compareHistory.splice(i, 1);
-      renderCompareSlots();
-    });
-  });
-}
-
-
-
-function handleCompareStart() {
-  const hasResult =
-    ($result && $result.innerHTML.trim()) ||
-    ($resultText && $resultText.innerHTML.trim());
-
-  if (!hasResult) {
-    showMessage("먼저 예측을 완료해주세요!");
-    return;
-  }
-
-  const snap = saveCurrentResultSnapshot();
-  const last = compareHistory[compareHistory.length - 1];
-
-  if (!last || last.html !== snap.html) {
-    compareHistory.push(snap);
-  }
-
-  compareActive = true;
-  if ($comparePanel) $comparePanel.style.display = "block";
-  renderCompareSlots();
-
-  if (compareHistory.length >= MAX_COMPARE) {
-    showMessage("최대 4개까지 기록됩니다. 새로 분석하기만 가능해요!");
-  }
-}
-
-function handleNewAnalysis() {
-  compareActive = true;  // 비교 기능 유지
-  // → 기존 백업 유지!
-  renderCompareSlots();
-  // 🔥 goToInitialState(false) → "결과만 초기화"
-  goToInitialState(false);
-}
-
-// 이벤트 연결 그대로 유지
-if ($btnCompareStart) {
-  $btnCompareStart.addEventListener("click", handleCompareStart);
-}
-if ($btnNew) {
-  $btnNew.addEventListener("click", handleNewAnalysis);
-}
-
-
-// =========================
-// 데모 모드 (팀원 코드 기반 + 통합)
-// =========================
-
-// 랜덤 파일 선택
-function pickRandomFile() {
-  return demoFiles[Math.floor(Math.random() * demoFiles.length)];
-}
-
-// 파일 목록 로드
-async function loadDemoFiles() {
-  const res = await fetch(`${API_BASE}/demo_files`);
-  const data = await res.json();
-  demoFiles = data.files || [];
-}
-
-// Promise 대기
-function wait(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
-}
-
-// 데모 루프
-async function startDemoLoop() {
-  if (demoRunning) return;
-  demoRunning = true;
-
-  while (demoRunning) {
-    const fileName = pickRandomFile();
-    if (!fileName) break;
-
-    const blob = await fetch(`${API_BASE}/image/${encodeURIComponent(fileName)}`).then(r => r.blob());
-
-    // 미리보기 표시
-    showPreview(blob);
-    // 예측 실행
-    await runPrediction(blob);
-
-    // 10초 대기
-    await wait(10000);
-
-    // 자동 백업
-    handleCompareStart();
-
-    // 2초 대기
-    await wait(2000);
-
-    // 최대 4개 쌓이면 자동 초기화
-    if (compareHistory.length >= MAX_COMPARE) {
-      handleNewAnalysis();
-    }
-  }
-}
-
-function stopDemoLoop() {
-  demoRunning = false;
-  goToInitialState();
-}
-
-// UI 잠금/해제
-function lockUIForDemo() {
-  if ($dropArea) $dropArea.style.pointerEvents = "none";
-  if ($file) $file.disabled = true;
-  if ($cameraBtn) $cameraBtn.style.display = "none";
-  if ($btn) $btn.style.display = "none";
-}
-function unlockUI() {
-  if ($dropArea) $dropArea.style.pointerEvents = "auto";
-  if ($file) $file.disabled = false;
-  if ($cameraBtn) $cameraBtn.style.display = "inline-block";
-  if ($btn) $btn.style.display = "inline-block";
-}
-
-// 토글 스위치로 데모 모드 제어
-if ($toggle) {
-  $toggle.addEventListener("change", () => {
-    if ($toggle.checked) {
-      lockUIForDemo();
-      startDemoLoop();
-    } else {
-      stopDemoLoop();
-      unlockUI();
-    }
-    updateTooltipText();
-  });
-}
-
-// 3분 Idle → 자동 데모 ON
-function resetIdleTimer() {
-  if (idleTimer) clearTimeout(idleTimer);
-
-  idleTimer = setTimeout(() => {
-    if ($toggle) {
-      $toggle.checked = true;
-      lockUIForDemo();
-      startDemoLoop();
-      updateTooltipText();
-    }
-  }, 3 * 60 * 1000);
-}
-
-window.addEventListener("load", async () => {
-  try {
-    await loadDemoFiles();
-  } catch (e) {
-    console.warn("데모 파일 로드 실패:", e);
-  }
-  resetIdleTimer();
-});
-
-window.addEventListener("click", resetIdleTimer);
-window.addEventListener("mousemove", resetIdleTimer);
-window.addEventListener("keydown", resetIdleTimer);
-
-// =========================
-// 서버 업로드 및 예측 (스트리밍 사용) — 통합 runPrediction
-// =========================
-async function runPrediction(uploadFile) {
-  if (!uploadFile) {
-    alert("이미지를 선택하거나 촬영하세요!");
-    return;
-  }
-
-  if ($predictStatus) $predictStatus.innerText = "예측 중...";
-
-  if ($resultBox) $resultBox.classList.remove("active");
-  if ($actionButtons) {
-    $actionButtons.classList.remove("show");
-    $actionButtons.style.display = "none";
-  }
-  if ($feedbackSection) $feedbackSection.style.display = "none";
-  if ($correctionForm) $correctionForm.style.display = "none";
-
-  if ($previewWrapper) $previewWrapper.classList.add("has-image");
-  if ($cropBtn) $cropBtn.style.display = "none";
-
-  const fd = new FormData();
-  fd.append("file", uploadFile);
-  fd.append("demo", demoRunning ? "1" : "0");
-
-  if ($loader) $loader.style.display = "inline-block";
-  if ($scanLine) $scanLine.style.display = "block";
-
-  if ($result) $result.textContent = "";
-  if ($resultText) $resultText.innerHTML = "";
-  if ($shopLinks) {
-    $shopLinks.style.display = "none";
-    $shopLinks.innerHTML = "";
-  }
-  if ($shopTitle) $shopTitle.style.display = "none";
-  if ($container) $container.innerHTML = "";
-  if ($status) $status.innerText = "";
-
-  if (window.__fabric_slide_interval_id) {
-    clearInterval(window.__fabric_slide_interval_id);
-    window.__fabric_slide_interval_id = null;
-  }
-
-  try {
-    const res = await fetch(API_STREAM, { method: "POST", body: fd });
-
-    if (!res.ok) {
-      const errText = await res.text();
-      throw new Error(errText || "요청 실패");
-    }
-
-    const reader = res.body.getReader();
-    const decoder = new TextDecoder("utf-8");
-    let chunk = "";
-
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-
-      chunk += decoder.decode(value, { stream: true });
-      let lines = chunk.split("\n");
-      chunk = lines.pop();
-
-      for (const line of lines) {
-        const trimmed = line.trim();
-        if (!trimmed) continue;
-
-        let parsed;
-        try {
-          parsed = JSON.parse(trimmed);
-        } catch (e) {
-          console.warn("JSON 파싱 실패한 라인:", trimmed, e);
-          continue;
-        }
-
-        if (parsed.status && $status) {
-          $status.innerText = parsed.status;
-        }
-
-        if (parsed.result) {
-          const r = parsed.result;
-
-          // 프로그래스바 (네 코드 기준, 클래스명 progress-bar 유지)
-          if (r?.predictions?.length && $container) {
-            let progressBarsHtml = "";
-
-            r.predictions.forEach((p) => {
-              const percent = (p.score * 100).toFixed(1);
-              progressBarsHtml += `
-                <div class="progress-row">
-                  <span class="progress-label">${p.label}</span>
-                  <div class="progress-wrapper">
-                    <div class="progress-bar" data-percent="${percent}" style="width:0"></div>
-                  </div>
-                  <span class="progress-percent">${percent}%</span>
-                </div>
-              `;
-            });
-
-            $container.innerHTML = progressBarsHtml;
-
-            $container.style.opacity = 0;
-            $container.style.transform = "translateY(20px)";
-            $container.style.transition = "opacity 0.5s, transform 0.5s";
-
-            setTimeout(() => {
-              $container.style.opacity = 1;
-              $container.style.transform = "translateY(0)";
-
-              $container.querySelectorAll(".progress-bar").forEach((bar) => {
-                const percent = bar.dataset.percent;
-                bar.style.transition = "width 1.2s cubic-bezier(.42,0,.58,1)";
-                bar.style.width = percent + "%";
-              });
-            }, 100);
-
-            if ($result) $result.textContent = "";
-          } else if (parsed.error && $result) {
-            $result.textContent = "백엔드 에러: " + parsed.error;
-          }
-
-          // 상세 정보 + 쇼핑몰 슬라이드 (팀원 코드 기반)
-          if (r.ko_name) {
-            const koName = r.ko_name || "";
-            const predictedFabric = r.predicted_fabric || "";
-            const wash = r.wash_method || "정보 없음";
-            const dry = r.dry_method || "정보 없음";
-            const special = r.special_note || "정보 없음";
-
-            if ($resultText) {
-              $resultText.innerHTML = `
-                <h3>${koName} (${predictedFabric})</h3>
-                <p>🧺 세탁법: ${wash}</p>
-                <p>🌬️ 건조법: ${dry}</p>
-                <p>⚠️ 주의사항: ${special}</p>
-              `;
-            }
-
-            if ($resultBox) $resultBox.classList.add("active");
-            if ($actionButtons) {
-              $actionButtons.style.display = "flex";
-              $actionButtons.classList.add("show");
-            }
-            if ($feedbackSection) $feedbackSection.style.display = "block";
-
-            window.predictedClass = predictedFabric || koName;
-            window.uploadedFile = uploadFile;
-
-            const fabric = (predictedFabric || "").toLowerCase();
-            const query = encodeURIComponent(koName || predictedFabric);
-
-            const shopImages = {
-              naver: [`./images/naver/${fabric}1.jpg`, `./images/naver/${fabric}2.jpg`],
-              musinsa: [`./images/musinsa/${fabric}3.jpg`, `./images/musinsa/${fabric}4.jpg`],
-              spao: [`./images/spao/${fabric}5.jpg`, `./images/spao/${fabric}6.jpg`]
-            };
-
-            const shopLinksData = [
-              { name: "네이버 쇼핑", url: `https://search.shopping.naver.com/search/all?query=${query}`, images: shopImages.naver },
-              { name: "무신사", url: `https://www.musinsa.com/search/musinsa/integration?keyword=${query}`, images: shopImages.musinsa },
-              { name: "스파오", url: `https://www.spao.com/product/search.html?keyword=${query}`, images: shopImages.spao }
-            ];
-
-            if ($shopLinks) {
-              $shopLinks.innerHTML = shopLinksData
-                .map(shop => `
-                  <a href="${shop.url}" target="_blank" class="shop-link">
-                    ${shop.images.map((img, i) => `
-                      <img src="${img}" alt="${shop.name} 이미지 ${i + 1}" class="${i === 0 ? "active" : ""}">
-                    `).join("")}
-                  </a>
-                `)
-                .join("");
-              $shopLinks.style.display = "flex";
-            }
-            if ($shopTitle) $shopTitle.style.display = "block";
-
-            if (window.__fabric_slide_interval_id) {
-              clearInterval(window.__fabric_slide_interval_id);
-              window.__fabric_slide_interval_id = null;
-            }
-
-            let currentSlide = 0;
-            window.__fabric_slide_interval_id = setInterval(() => {
-              if (!$shopLinks) return;
-              $shopLinks.querySelectorAll("a").forEach((aTag) => {
-                const imgs = aTag.querySelectorAll("img");
-                imgs.forEach((img, i) => {
-                  img.classList.toggle("active", i === (currentSlide % imgs.length));
-                });
-              });
-              currentSlide++;
-            }, 2000);
-          }
-
-          if ($predictStatus) $predictStatus.innerText = "예측 완료!";
-        }
-
-        if (parsed.error) {
-          if ($result) $result.textContent = "백엔드 에러: " + parsed.error;
-          if ($resultText) $resultText.innerText = "백엔드 에러: " + parsed.error;
-          if ($predictStatus) $predictStatus.innerText = "에러가 발생했습니다.";
-        }
-      }
-    }
-
-    const trailing = chunk.trim();
-    if (trailing) {
-      try {
-        const parsed = JSON.parse(trailing);
-        if (parsed.status && $status) $status.innerText = parsed.status;
-      } catch (e) {
-        console.warn("마지막 청크 JSON 파싱 실패:", trailing);
-      }
-    }
-  } catch (e) {
-    if ($result) $result.textContent = "에러: " + (e.message || e);
-    if ($resultText) $resultText.innerText = "에러: " + (e.message || e);
-    if ($predictStatus) $predictStatus.innerText = "에러가 발생했습니다.";
-  } finally {
-    if ($loader) $loader.style.display = "none";
-    if ($scanLine) $scanLine.style.display = "none";
-
-    // 데모 모드가 아닐 때만 수동 백업 버튼 표시
-    if (!demoRunning) {
-      if ($btnCompareStart) $btnCompareStart.style.display = "inline-block";
-      if ($btnNew) $btnNew.style.display = "inline-block";
-    }
-  }
-}
-
-// 버튼 클릭 → 예측 실행
-if ($btn) {
-  $btn.addEventListener("click", async () => {
-    let uploadFile =
-      ($file && $file.files && $file.files[0]) ||
-      ($file && $file._cameraBlob) ||
-      window.uploadedFile;
-
-    if (!uploadFile) {
-      alert("이미지를 선택하거나 촬영하세요!");
-      return;
-    }
-
-    await runPrediction(uploadFile);
-  });
-}
-
-// =========================
-// 카메라 촬영 (팀원 코드 기반 + 촬영 버튼 표시 수정)
-// =========================
-
-// 캡처 버튼 이벤트 등록 (1회만)
-function registerCaptureOnce() {
-  if (captureBtnRegistered) return;
-  captureBtnRegistered = true;
-
-  $captureBtn.addEventListener("click", async () => {
-    $canvas.width = $video.videoWidth;
-    $canvas.height = $video.videoHeight;
-    $canvas.getContext("2d").drawImage($video, 0, 0);
-
-    const blob = await new Promise(resolve =>
-      $canvas.toBlob(resolve, "image/png")
-    );
-
-    const stream = $video.srcObject;
-    if (stream) stream.getTracks().forEach(track => track.stop());
-
-    showPreview(blob);
-    if ($previewWrapper) {
-      $previewWrapper.innerHTML = "";
-      $previewWrapper.appendChild($preview);
-      if ($scanLine) $previewWrapper.appendChild($scanLine);
-    }
-
-    if ($file) $file._cameraBlob = blob;
-    window.uploadedFile = blob;
-
-    // 자동으로 예측 실행
-    if ($btn) $btn.click();
-  });
-}
-
-// 카메라 시작 함수
-async function startCamera() {
-  try {
-    const stream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: { ideal: "environment" } },
-      audio: false
-    });
-
-    if ($result) $result.textContent = "";
-    if ($resultText) $resultText.innerHTML = "";
-    if ($shopLinks) $shopLinks.style.display = "none";
-    if ($shopTitle) $shopTitle.style.display = "none";
-    if ($container) $container.innerHTML = "";
-    if ($status) $status.innerText = "";
-
-    $video.srcObject = stream;
-    $video.autoplay = true;
-    $video.playsInline = true;
-
-    if ($previewWrapper) {
-      $previewWrapper.innerHTML = "";
-      $previewWrapper.appendChild($video);
-    }
-
-    await new Promise(resolve => {
-      $video.onloadedmetadata = () => {
-        $video.play();
-        resolve();
-      };
-    });
-
-    $captureBtn.className = "capture-circle";
-    if ($previewWrapper) {
-      $previewWrapper.appendChild($captureBtn); // ★ 촬영 버튼 DOM에 추가
-    }
-
-    registerCaptureOnce();
-  } catch (err) {
-    alert("카메라를 사용할 수 없습니다: " + err.message);
-  }
-}
-
-/*if ($cameraBtn) {
-  $cameraBtn.addEventListener("click", startCamera);
-}*/
-
-// 촬영 버튼 클릭 → startCamera 실행
-function isMobile() {
-  return /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-}
-
-
-function handleCameraClick() {
-  if (isMobile()) {
-    // 모바일: 카메라 앱 실행
-    const mobileInput = document.createElement("input");
-    mobileInput.type = "file";
-    mobileInput.accept = "image/*";
-    mobileInput.capture = "environment";
-    mobileInput.style.display = "none";
-
-    mobileInput.addEventListener("change", (e) => {
-      const file = e.target.files?.[0];
-      if (!file) return;
-
-      $file._cameraBlob = file;
-
-      // 미리보기 박스에 표시
-      showPreview(file);
-      $previewWrapper.appendChild($preview);
-    });
-
-    document.body.appendChild(mobileInput);
-    mobileInput.click();
-    document.body.removeChild(mobileInput);
-
-  } else {
-    // PC: 기존 카메라 장치
-    startCamera();
-  }
-}
-
-// DOMContentLoaded 안에서 등록
-document.addEventListener("DOMContentLoaded", () => {
-  $cameraBtn.addEventListener("click", handleCameraClick);
-});
-
-// =========================
-// 5분마다 서버 ping
-// =========================
-setInterval(async () => {
-  try {
-    const res = await fetch("https://backend-6i2t.onrender.com/ping");
-    if (res.ok) {
-      console.log("서버 ping 성공");
-    }
-  } catch (err) {
-    console.warn("서버 ping 실패:", err);
-  }
-}, 5 * 60 * 1000);
-
-// =========================
-// ⭐ 방명록 서버 API 연결 ⭐ (네 코드 기준)
-// =========================
-document.addEventListener("DOMContentLoaded", () => {
-  const form = document.getElementById("contactForm");
-  const feed = document.getElementById("guestbookFeed");
-
-  if (!form || !feed) return;
-
-  async function loadGuestbook() {
-    feed.innerHTML = "";
-    const res = await fetch(API_guestbook);
-    const list = await res.json();
-
-    list.forEach(item => {
-      const li = document.createElement("li");
-      li.innerHTML = `
-        <strong>${item.name}</strong>
-        <div class="date">${item.created_at}</div>
-        <p>${item.message}</p>
-        ${item.contactInfo ? `<small>연락처: ${item.contactInfo}</small>` : ""}
-        <button class="deleteBtn" data-id="${item.id}">삭제</button>
-      `;
-      feed.appendChild(li);
-    });
-  }
-
-  form.addEventListener("submit", async (e) => {
-    e.preventDefault();
-
-    const name = document.getElementById("name").value.trim();
-    const contactInfo = document.getElementById("contactInfo").value.trim();
-    const message = document.getElementById("message").value.trim();
-
-    if (!name || !message) {
-      alert("이름과 메모는 필수입니다!");
-      return;
-    }
-
-    await fetch(API_guestbook, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, contactInfo, message })
-    });
-
-    form.reset();
-    loadGuestbook();
-  });
-
-  feed.addEventListener("click", async (e) => {
-    if (!e.target.classList.contains("deleteBtn")) return;
-
-    const id = e.target.dataset.id;
-
-    if (confirm("정말 삭제할까요?")) {
-      await fetch(`${API_guestbook}/${id}`, {
-        method: "DELETE"
-      });
-      loadGuestbook();
-    }
-  });
-
-  loadGuestbook();
-});
-
-// =========================
-// 정정 피드백 제출
-// =========================
-if ($submitCorrection && $correctLabel) {
-  $submitCorrection.addEventListener("click", () => {
-    const corrected = $correctLabel.value;
-
-    if (!window.uploadedFile) {
-      alert("이미지가 없습니다. 다시 업로드해주세요.");
-      return;
-    }
-    if (!window.predictedClass) {
-      alert("예측 결과가 아직 없습니다.");
-      return;
-    }
-
-    sendFeedback(window.predictedClass, corrected, window.uploadedFile);
-  });
-}
-
-async function sendFeedback(predicted, corrected, file) {
-  const formData = new FormData();
-  formData.append("predicted", predicted);
-  formData.append("corrected", corrected);
-  formData.append("image", file);
-
-  try {
-    const res = await fetch("https://feedback-server-derm.onrender.com/feedback", {
-      method: "POST",
-      body: formData
-    });
-
-    const data = await res.json();
-    console.log("Feedback response:", data);
-    alert("정정 정보가 성공적으로 전송되었습니다! 감사합니다 😊");
-  } catch (err) {
-    alert("정정 정보 전송 중 오류가 발생했습니다: " + err.message);
+  #contact.contact-section #guestbookFeed {
+    max-height: 300px !important;
   }
 }
